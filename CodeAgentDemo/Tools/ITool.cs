@@ -2,33 +2,18 @@ using System.Text.Json;
 
 namespace CodeAgentDemo.Tools;
 
-/// <summary>
-/// Interface for tools that can be called by the LLM.
-/// </summary>
 public interface ITool
 {
-    /// <summary>
-    /// Tool name used for identification.
-    /// </summary>
     string Name { get; }
-    
-    /// <summary>
-    /// Description of what the tool does.
-    /// </summary>
     string Description { get; }
-    
-    /// <summary>
-    /// JSON Schema for input parameters.
-    /// </summary>
     JsonElement InputSchema { get; }
+    Task<ToolResult> ExecuteAsync(JsonElement arguments, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Executes the tool with given arguments.
+    /// 判断工具执行是否需要用户确认。
+    /// 返回 true 表示需要确认，false 表示可以跳过确认直接执行。
     /// </summary>
-    Task<ToolResult> ExecuteAsync(JsonElement arguments);
+    bool RequiresConfirmation(JsonElement arguments) => true;
 }
 
-/// <summary>
-/// Result of tool execution.
-/// </summary>
 public record ToolResult(bool Success, string Output);

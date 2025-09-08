@@ -3,6 +3,9 @@
 **生成时间:** 2026-03-20 11:18 CST
 **分支:** main
 
+## 
+强制使用 中文进行交流，代码可以用英文
+
 ## 概述
 
 C#/.NET 8 Agent 循环系统，参考 claw0 设计模式。使用 Microsoft.Extensions.AI 作为 LLM 提供商抽象层，支持 Anthropic 和 OpenAI 兼容端点切换。

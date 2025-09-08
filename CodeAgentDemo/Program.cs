@@ -6,9 +6,6 @@ using DotNetEnv;
 
 Env.Load();
 
-Console.WriteLine("CodeAgent - Agent Loop");
-Console.WriteLine("Enter your prompt (or 'quit' to exit):\n");
-
 try
 {
     var provider = ChatProviderFactory.Create();
@@ -27,6 +24,7 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"Error: {ex.Message}");
+    var ui = new ConsoleUI();
+    ui.PrintError(ex.Message);
     Environment.Exit(1);
 }

@@ -28,11 +28,13 @@ public static class ChatProviderFactory
         var model = Environment.GetEnvironmentVariable("ANTHROPIC_MODEL")
             ?? "claude-sonnet-4-20250514";
 
+        var baseUrl = Environment.GetEnvironmentVariable("ANTHROPIC_BASE_URL");
+
         var enableThinking = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var et) && et;
         var thinkingBudget = int.TryParse(Environment.GetEnvironmentVariable("THINKING_BUDGET_TOKENS"), out var tb)
             ? tb : 10000;
 
-        return new AnthropicProvider(apiKey, model, enableThinking, thinkingBudget);
+        return new AnthropicProvider(apiKey, model, enableThinking, thinkingBudget, baseUrl);
     }
 
     private static OpenAIProvider CreateOpenAIProvider()
@@ -45,6 +47,8 @@ public static class ChatProviderFactory
 
         var endpoint = Environment.GetEnvironmentVariable("OPENAI_API_URL");
 
-        return new OpenAIProvider(apiKey, model, endpoint);
+        var enableThinking = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var et) && et;
+
+        return new OpenAIProvider(apiKey, model, endpoint, enableThinking);
     }
 }

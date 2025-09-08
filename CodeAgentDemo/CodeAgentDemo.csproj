@@ -8,10 +8,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Anthropic.SDK" Version="5.10.0" />
+		<InternalsVisibleTo Include="CodeAgentDemo.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Anthropic" Version="12.9.0" />
 		<PackageReference Include="OpenAI" Version="2.1.0" />
 		<PackageReference Include="DotNetEnv" Version="3.0.0" />
 		<PackageReference Include="System.Text.Json" Version="10.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update=".env">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
