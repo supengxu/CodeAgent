@@ -57,11 +57,9 @@ public class BashTool : ITool
     /// </summary>
     private bool IsSafeCommand(string command)
     {
-        if (command.Contains(".."))
-            return false;
+      
         
-        if (ContainsAbsolutePath(command))
-            return false;
+      
         
         return IsAllowedSafeOperation(command);
     }
