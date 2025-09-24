@@ -78,6 +78,7 @@ public class OpenAIConverter : IOpenAIConverter
         string? textDelta = null;
         string? thinkingDelta = null;
         ToolCallDelta? toolCallDelta = null;
+        UsageInfo? usage = null;
         
         // 提取 reasoning_content (仅在启用 thinking 时)
         if (_enableThinking)
@@ -100,7 +101,30 @@ public class OpenAIConverter : IOpenAIConverter
             );
         }
         
-        return new StreamChunk(textDelta, thinkingDelta, toolCallDelta, GetFinishReason(update));
+        usage = ExtractUsage(update);
+        
+        return new StreamChunk(textDelta, thinkingDelta, toolCallDelta, GetFinishReason(update), usage);
+    }
+    
+    private UsageInfo? ExtractUsage(OpenAI.Chat.StreamingChatCompletionUpdate update)
+    {
+        try
+        {
+            var usage = update.Usage;
+            if (usage != null)
+            {
+                return new UsageInfo(
+                    usage.InputTokenCount,
+                    usage.OutputTokenCount
+                );
+            }
+        }
+        catch
+        {
+            // 部分 API 端点不支持 usage
+        }
+        
+        return null;
     }
     
     /// <summary>

@@ -249,6 +249,31 @@ public void BeginStream()
         WriteColor($"{toolCallCount} 工具调用", ConsoleTheme.Accent);
         Console.WriteLine();
     }
+    
+    /// <summary>
+    /// 打印响应统计（时间和 token）
+    /// </summary>
+    public void PrintResponseUsage(DateTime startTime, DateTime endTime, int? inputTokens, int? outputTokens)
+    {
+        var duration = endTime - startTime;
+        var timeStr = duration.TotalSeconds >= 1 
+            ? $"{duration.TotalSeconds:F1}s" 
+            : $"{duration.TotalMilliseconds:F0}ms";
+        
+        WriteColor("│  ⏱ ", ConsoleTheme.Dim);
+        WriteColor(timeStr, ConsoleTheme.Accent);
+        
+        if (inputTokens.HasValue && outputTokens.HasValue)
+        {
+            WriteColor(" · ", ConsoleTheme.Dim);
+            WriteColor($"📥 {inputTokens}", ConsoleTheme.ToolCall);
+            WriteColor(" ", ConsoleTheme.Dim);
+            WriteColor($"📤 {outputTokens}", ConsoleTheme.ToolResult);
+            WriteColor(" tokens", ConsoleTheme.Dim);
+        }
+        
+        Console.WriteLine();
+    }
 
     /// <summary>
     /// 打印退出消息

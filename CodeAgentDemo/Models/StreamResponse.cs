@@ -8,7 +8,8 @@ namespace CodeAgentDemo.Models;
 public record StreamResponse(
     IEnumerable<ContentBlock> Content,
     IReadOnlyList<ToolCall> ToolCalls,
-    string StopReason
+    string StopReason,
+    UsageInfo? Usage = null
 );
 
 /// <summary>

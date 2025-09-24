@@ -77,11 +77,21 @@ public class AgentLoop : IAgentLoop
 
         _session.AddMessage(ChatMessage.CreateText(ChatRole.User, message));
 
+        var startTime = DateTime.Now;
+        var totalInputTokens = 0;
+        var totalOutputTokens = 0;
+
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var response = await CollectStreamingResponseAsync(cancellationToken);
+            
+            if (response.Usage != null)
+            {
+                totalInputTokens += response.Usage.InputTokens;
+                totalOutputTokens += response.Usage.OutputTokens;
+            }
 
             if (response.Content.Any())
             {
@@ -100,6 +110,11 @@ public class AgentLoop : IAgentLoop
                 }
                 continue;
             }
+
+            var endTime = DateTime.Now;
+            _ui.PrintResponseUsage(startTime, endTime, 
+                totalInputTokens > 0 ? totalInputTokens : null, 
+                totalOutputTokens > 0 ? totalOutputTokens : null);
 
             return new AgentResponse(response.Content, response.StopReason);
         }
@@ -149,6 +164,7 @@ public class AgentLoop : IAgentLoop
         var toolCallBuilders = new List<ToolCallBuilder>();
         string? stopReason = null;
         bool toolCallDetected = false;
+        UsageInfo? usage = null;
 
         _ui.BeginStream();
 
@@ -180,6 +196,11 @@ public class AgentLoop : IAgentLoop
             {
                 stopReason = chunk.StopReason;
             }
+            
+            if (chunk.Usage != null)
+            {
+                usage = chunk.Usage;
+            }
         }
 
         _ui.EndStream();
@@ -192,7 +213,7 @@ public class AgentLoop : IAgentLoop
             stopReason = "tool_use";
         }
 
-        return new StreamResponse(contentBlocks, toolCalls, stopReason ?? "end_turn");
+        return new StreamResponse(contentBlocks, toolCalls, stopReason ?? "end_turn", usage);
     }
 
     private void AccumulateToolCall(List<ToolCallBuilder> builders, ToolCallDelta delta)
