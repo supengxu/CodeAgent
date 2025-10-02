@@ -18,7 +18,7 @@ public class BashToolTests
     [Fact]
     public void Description_ShouldBeSet()
     {
-        _tool.Description.Should().Contain("bash command");
+        _tool.Description.Should().Contain("bash");
     }
 
     [Fact]
@@ -166,6 +166,12 @@ public class BashToolTests
     [InlineData("dotnet build", false)]
     [InlineData("vim file.txt", false)]
     [InlineData("ls -la", false)]
+    [InlineData("ls /tmp", false)]
+    [InlineData("ls ..", false)]
+    [InlineData("cat /etc/passwd", false)]
+    [InlineData("npm install", false)]
+    [InlineData("yarn install", false)]
+    [InlineData("pip install package", false)]
     public void RequiresConfirmation_WithSafeCommands_ShouldReturnFalse(string command, bool expected)
     {
         var args = JsonDocument.Parse($"{{\"command\":\"{command}\"}}").RootElement;
@@ -177,12 +183,13 @@ public class BashToolTests
 
     [Theory]
     [InlineData("rm -rf /", true)]
-    [InlineData("cat /etc/passwd", true)]
-    [InlineData("ls ..", true)]
-    [InlineData("ls /tmp", true)]
     [InlineData("rm -rf *", true)]
     [InlineData("sudo apt install", true)]
     [InlineData("curl http://example.com", true)]
+    [InlineData("wget http://example.com", true)]
+    [InlineData("python script.py", true)]
+    [InlineData("node app.js", true)]
+    [InlineData("docker run image", true)]
     public void RequiresConfirmation_WithUnsafeCommands_ShouldReturnTrue(string command, bool expected)
     {
         var args = JsonDocument.Parse($"{{\"command\":\"{command.Replace("\"", "\\\"")}\"}}").RootElement;

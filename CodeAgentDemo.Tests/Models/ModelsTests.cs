@@ -155,12 +155,17 @@ public class StreamChunkTests
     public void Constructor_ShouldSetAllProperties()
     {
         var toolDelta = new ToolCallDelta("id-1", "bash", "{\"cmd\":");
+        var usage = new UsageInfo(100, 50);
 
-        var chunk = new StreamChunk("text delta", "thinking delta", toolDelta);
+        var chunk = new StreamChunk("text delta", "thinking delta", toolDelta, "end_turn", usage);
 
         chunk.TextDelta.Should().Be("text delta");
         chunk.ThinkingDelta.Should().Be("thinking delta");
         chunk.ToolCallDelta.Should().NotBeNull();
+        chunk.StopReason.Should().Be("end_turn");
+        chunk.Usage.Should().NotBeNull();
+        chunk.Usage!.InputTokens.Should().Be(100);
+        chunk.Usage.OutputTokens.Should().Be(50);
     }
 
     [Fact]
@@ -171,6 +176,17 @@ public class StreamChunkTests
         chunk.TextDelta.Should().BeNull();
         chunk.ThinkingDelta.Should().BeNull();
         chunk.ToolCallDelta.Should().BeNull();
+        chunk.StopReason.Should().BeNull();
+        chunk.Usage.Should().BeNull();
+    }
+
+    [Fact]
+    public void Constructor_WithDefaults_ShouldUseDefaults()
+    {
+        var chunk = new StreamChunk("text", null, null);
+
+        chunk.TextDelta.Should().Be("text");
+        chunk.StopReason.Should().BeNull();
     }
 }
 
@@ -228,5 +244,29 @@ public class ToolCallTests
         toolCall.Id.Should().Be("call-123");
         toolCall.Name.Should().Be("bash");
         toolCall.Arguments.ToString().Should().Contain("command");
+    }
+}
+
+public class UsageInfoTests
+{
+    [Fact]
+    public void Constructor_ShouldSetProperties()
+    {
+        var usage = new UsageInfo(1000, 500);
+
+        usage.InputTokens.Should().Be(1000);
+        usage.OutputTokens.Should().Be(500);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(100, 50)]
+    [InlineData(10000, 5000)]
+    public void Constructor_WithVariousValues_ShouldSetCorrectly(int input, int output)
+    {
+        var usage = new UsageInfo(input, output);
+
+        usage.InputTokens.Should().Be(input);
+        usage.OutputTokens.Should().Be(output);
     }
 }

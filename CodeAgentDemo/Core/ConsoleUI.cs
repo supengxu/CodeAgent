@@ -179,10 +179,11 @@ public void BeginStream()
     /// </summary>
     public void PrintToolExecuting(string toolName)
     {
+        // 输出到同一行，不换行，以便后续可以覆盖
         WriteColor("  ⏳ 正在执行 ", ConsoleTheme.Warning);
         WriteColor(toolName, ConsoleTheme.Accent);
         WriteColor("...", ConsoleTheme.Dim);
-        Console.WriteLine();
+        // 不换行，保持在当前行
     }
 
     /// <summary>
@@ -190,6 +191,9 @@ public void BeginStream()
     /// </summary>
     public void PrintToolResult(string toolName, string result, bool success)
     {
+        // 清除当前行（"正在执行"状态），然后打印结果
+        Console.Write("\r\x1b[2K");  // 回到行首并清除整行
+        
         var theme = success ? ConsoleTheme.Success : ConsoleTheme.Error;
         var icon = success ? "✓" : "✗";
         

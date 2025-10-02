@@ -7,123 +7,124 @@ namespace CodeAgentDemo.Tests.Providers;
 public class ChatProviderFactoryTests
 {
     [Fact]
-    public void Create_WithoutProviderEnvVar_ShouldThrowInvalidOperationException()
+    public void Create_WithoutApiKey_ShouldThrowInvalidOperationException()
     {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", null);
-
-        var act = () => ChatProviderFactory.Create();
-
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*AI_PROVIDER*required*");
-    }
-
-    [Fact]
-    public void Create_WithUnknownProvider_ShouldThrowInvalidOperationException()
-    {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "unknown_provider");
-
-        var act = () => ChatProviderFactory.Create();
-
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*Unknown provider*");
-    }
-
-    [Fact]
-    public void Create_WithAnthropicProvider_ShouldCreateAnthropicProvider()
-    {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "anthropic");
-        Environment.SetEnvironmentVariable("ANTHROPIC_API_KEY", "test-api-key");
-        Environment.SetEnvironmentVariable("ANTHROPIC_MODEL", "claude-sonnet-4");
-
-        var provider = ChatProviderFactory.Create();
-
-        provider.Should().BeOfType<AnthropicProvider>();
-        provider.ProviderName.Should().Be("Anthropic");
-
-        CleanupEnvironment();
-    }
-
-    [Fact]
-    public void Create_WithOpenAIProvider_ShouldCreateOpenAIProvider()
-    {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "openai");
-        Environment.SetEnvironmentVariable("OPENAI_API_KEY", "test-api-key");
-        Environment.SetEnvironmentVariable("OPENAI_MODEL", "gpt-4");
-
-        var provider = ChatProviderFactory.Create();
-
-        provider.Should().BeOfType<OpenAIProvider>();
-        provider.ProviderName.Should().Be("OpenAI");
-
-        CleanupEnvironment();
-    }
-
-    [Fact]
-    public void Create_WithAnthropicWithoutApiKey_ShouldThrowInvalidOperationException()
-    {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "anthropic");
-        Environment.SetEnvironmentVariable("ANTHROPIC_API_KEY", null);
-
-        var act = () => ChatProviderFactory.Create();
-
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*ANTHROPIC_API_KEY*");
-
-        CleanupEnvironment();
-    }
-
-    [Fact]
-    public void Create_WithOpenAIWithoutApiKey_ShouldThrowInvalidOperationException()
-    {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "openai");
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         Environment.SetEnvironmentVariable("OPENAI_API_KEY", null);
 
-        var act = () => ChatProviderFactory.Create();
+        try
+        {
+            var act = () => ChatProviderFactory.Create();
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*OPENAI_API_KEY*");
-
-        CleanupEnvironment();
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*OPENAI_API_KEY*");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+        }
     }
 
     [Fact]
-    public void Create_WithThinkingEnabled_ShouldPassThinkingParameters()
+    public void Create_WithApiKey_ShouldCreateOpenAIProvider()
     {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "anthropic");
-        Environment.SetEnvironmentVariable("ANTHROPIC_API_KEY", "test-api-key");
-        Environment.SetEnvironmentVariable("ENABLE_THINKING", "true");
-        Environment.SetEnvironmentVariable("THINKING_BUDGET_TOKENS", "5000");
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        Environment.SetEnvironmentVariable("OPENAI_API_KEY", "test-api-key");
 
-        var provider = ChatProviderFactory.Create();
+        try
+        {
+            var provider = ChatProviderFactory.Create();
 
-        provider.Should().BeOfType<AnthropicProvider>();
-
-        CleanupEnvironment();
+            provider.Should().BeOfType<OpenAIProvider>();
+            provider.ProviderName.Should().Be("OpenAI");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+        }
     }
 
     [Fact]
-    public void Create_WithCustomEndpoint_ShouldPassEndpoint()
+    public void Create_WithCustomModel_ShouldUseCustomModel()
     {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", "openai");
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var originalModel = Environment.GetEnvironmentVariable("OPENAI_MODEL");
+        Environment.SetEnvironmentVariable("OPENAI_API_KEY", "test-api-key");
+        Environment.SetEnvironmentVariable("OPENAI_MODEL", "gpt-4-turbo");
+
+        try
+        {
+            var provider = ChatProviderFactory.Create();
+
+            provider.Should().BeOfType<OpenAIProvider>();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+            Environment.SetEnvironmentVariable("OPENAI_MODEL", originalModel);
+        }
+    }
+
+    [Fact]
+    public void Create_WithCustomEndpoint_ShouldCreateProvider()
+    {
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var originalUrl = Environment.GetEnvironmentVariable("OPENAI_API_URL");
         Environment.SetEnvironmentVariable("OPENAI_API_KEY", "test-api-key");
         Environment.SetEnvironmentVariable("OPENAI_API_URL", "https://custom.api/v1");
 
-        var provider = ChatProviderFactory.Create();
+        try
+        {
+            var provider = ChatProviderFactory.Create();
 
-        provider.Should().BeOfType<OpenAIProvider>();
-
-        CleanupEnvironment();
+            provider.Should().BeOfType<OpenAIProvider>();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+            Environment.SetEnvironmentVariable("OPENAI_API_URL", originalUrl);
+        }
     }
 
-    private static void CleanupEnvironment()
+    [Fact]
+    public void Create_WithThinkingEnabled_ShouldCreateProvider()
     {
-        Environment.SetEnvironmentVariable("AI_PROVIDER", null);
-        Environment.SetEnvironmentVariable("ANTHROPIC_API_KEY", null);
-        Environment.SetEnvironmentVariable("ANTHROPIC_MODEL", null);
-        Environment.SetEnvironmentVariable("OPENAI_API_KEY", null);
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var originalThinking = Environment.GetEnvironmentVariable("ENABLE_THINKING");
+        Environment.SetEnvironmentVariable("OPENAI_API_KEY", "test-api-key");
+        Environment.SetEnvironmentVariable("ENABLE_THINKING", "true");
+
+        try
+        {
+            var provider = ChatProviderFactory.Create();
+
+            provider.Should().BeOfType<OpenAIProvider>();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+            Environment.SetEnvironmentVariable("ENABLE_THINKING", originalThinking);
+        }
+    }
+
+    [Fact]
+    public void Create_WithoutModelEnvVar_ShouldUseDefaultModel()
+    {
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var originalModel = Environment.GetEnvironmentVariable("OPENAI_MODEL");
+        Environment.SetEnvironmentVariable("OPENAI_API_KEY", "test-api-key");
         Environment.SetEnvironmentVariable("OPENAI_MODEL", null);
-        Environment.SetEnvironmentVariable("OPENAI_API_URL", null);
-        Environment.SetEnvironmentVariable("ENABLE_THINKING", null);
-        Environment.SetEnvironmentVariable("THINKING_BUDGET_TOKENS", null);
+
+        try
+        {
+            var provider = ChatProviderFactory.Create();
+
+            provider.Should().BeOfType<OpenAIProvider>();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+            Environment.SetEnvironmentVariable("OPENAI_MODEL", originalModel);
+        }
     }
 }

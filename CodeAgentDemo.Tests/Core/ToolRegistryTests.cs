@@ -126,7 +126,7 @@ public class ToolRegistryTests
         mock.SetupGet(t => t.Name).Returns(name);
         mock.SetupGet(t => t.Description).Returns(description);
         mock.SetupGet(t => t.InputSchema).Returns(JsonDocument.Parse("{}").RootElement);
-        mock.Setup(t => t.ExecuteAsync(It.IsAny<JsonElement>()))
+        mock.Setup(t => t.ExecuteAsync(It.IsAny<JsonElement>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ToolResult(true, "Success"));
         return mock;
     }

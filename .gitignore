@@ -13,4 +13,4 @@ riderModule.iml
 # Secrets and credentials
 **/secrets.json
 **/credentials.json
-**/appsettings.Development.json
+**/appsettings.Development.json.DS_Store

@@ -10,7 +10,16 @@ try
 {
     var provider = ChatProviderFactory.Create();
     var tools = new ToolRegistry();
-    tools.Register(new BashTool(Directory.GetCurrentDirectory()));
+    var workDir = Directory.GetCurrentDirectory();
+    
+    tools.Register(new ReadTool(workDir));
+    tools.Register(new WriteTool(workDir));
+    tools.Register(new EditTool(workDir));
+    tools.Register(new GlobTool(workDir));
+    tools.Register(new GrepTool(workDir));
+    tools.Register(new BashTool(workDir));
+    tools.Register(new WebSearchTool());
+    tools.Register(new CodeSearchTool());
 
     var options = new ChatOptions
     {

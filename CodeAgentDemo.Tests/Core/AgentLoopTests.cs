@@ -124,7 +124,7 @@ public class AgentLoopTests
 
         await loop.RunAsync();
 
-        consoleMock.Verify(c => c.Write("\n> "), Times.Once);
+        consoleMock.Verify(c => c.ReadLine(), Times.Once);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class AgentLoopTests
 
         await loop.RunAsync();
 
-        consoleMock.Verify(c => c.Write("\n> "), Times.Once);
+        consoleMock.Verify(c => c.ReadLine(), Times.Once);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public class AgentLoopTests
 
         await loop.RunAsync();
 
-        consoleMock.Verify(c => c.Write("\n> "), Times.Exactly(3));
+        consoleMock.Verify(c => c.ReadLine(), Times.Exactly(3));
     }
 }
 
