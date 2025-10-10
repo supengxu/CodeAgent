@@ -1,7 +1,9 @@
 using System.Text;
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;
+
 
 namespace CodeAgentDemo.Core;
 
@@ -16,7 +18,95 @@ public class DefaultConsoleIO : IConsoleIO
 {
     public void Write(string value) => Console.Write(value);
     public void WriteLine(string? value = null) => Console.WriteLine(value ?? string.Empty);
-    public string? ReadLine() => Console.ReadLine();
+    
+    public string? ReadLine()
+    {
+        var input = new StringBuilder();
+        var history = new List<string>();
+        var historyIndex = -1;
+        
+        while (true)
+        {
+            var key = Console.ReadKey(true);
+            
+            switch (key.Key)
+            {
+                case ConsoleKey.Enter:
+                    Console.WriteLine();
+                    if (input.Length > 0)
+                    {
+                        history.Add(input.ToString());
+                        historyIndex = history.Count;
+                    }
+                    return input.ToString();
+                    
+                case ConsoleKey.Backspace:
+                    if (input.Length > 0)
+                    {
+                        var lastChar = input[^1];
+                        input.Remove(input.Length - 1, 1);
+                        var displayWidth = GetDisplayWidth(lastChar);
+                        Console.Write(new string('\b', displayWidth) + new string(' ', displayWidth) + new string('\b', displayWidth));
+                    }
+                    break;
+                    
+                case ConsoleKey.UpArrow:
+                    if (history.Count > 0 && historyIndex > 0)
+                    {
+                        historyIndex--;
+                        ClearLine(input);
+                        input.Clear();
+                        input.Append(history[historyIndex]);
+                        Console.Write(input.ToString());
+                    }
+                    break;
+                    
+                case ConsoleKey.DownArrow:
+                    if (historyIndex < history.Count - 1)
+                    {
+                        historyIndex++;
+                        ClearLine(input);
+                        input.Clear();
+                        input.Append(history[historyIndex]);
+                        Console.Write(input.ToString());
+                    }
+                    break;
+                    
+                case ConsoleKey.Escape:
+                    ClearLine(input);
+                    input.Clear();
+                    break;
+                    
+                default:
+                    if (!char.IsControl(key.KeyChar))
+                    {
+                        input.Append(key.KeyChar);
+                        Console.Write(key.KeyChar);
+                    }
+                    break;
+            }
+        }
+    }
+    
+    private void ClearLine(StringBuilder input)
+    {
+        var totalWidth = 0;
+        foreach (var c in input.ToString())
+            totalWidth += GetDisplayWidth(c);
+        
+        if (totalWidth > 0)
+            Console.Write(new string('\b', totalWidth) + new string(' ', totalWidth) + new string('\b', totalWidth));
+    }
+    
+    private static int GetDisplayWidth(char c)
+    {
+        if (c >= 0x4E00 && c <= 0x9FFF ||
+            c >= 0x3400 && c <= 0x4DBF ||
+            c >= 0x3000 && c <= 0x303F ||
+            c >= 0xFF00 && c <= 0xFFEF)
+            return 2;
+        return 1;
+    }
 }
 
 public record AgentResponse(IEnumerable<ContentBlock> Content, string StopReason);
@@ -31,38 +121,72 @@ public interface IAgentLoop
 public class AgentLoop : IAgentLoop
 {
     private readonly IChatProvider _provider;
-    private readonly SessionStore _session;
+    private readonly SessionStore? _session;
     private readonly ToolRegistry _tools;
     private readonly ChatOptions _options;
     private readonly IConsoleIO _console;
     private readonly ConsoleUI _ui;
     private readonly Func<ToolCall, Task<bool>>? _toolConfirmationHandler;
+    private readonly SessionPersistence? _sessionPersistence;
+    private readonly string? _sessionFilePath;
+    private readonly SessionCli? _sessionCli;
     private int _toolCallCount;
 
-    public IReadOnlyList<ChatMessage> History => _session.Messages;
+    public IReadOnlyList<ChatMessage> History => _sessionCli?.CurrentSession.Messages ?? _session!.Messages;
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options)
-        : this(provider, tools, options, new DefaultConsoleIO(), null)
+        : this(provider, tools, options, new DefaultConsoleIO(), null, null, null)
     {
     }
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, 
         Func<ToolCall, Task<bool>>? toolConfirmationHandler)
-        : this(provider, tools, options, new DefaultConsoleIO(), toolConfirmationHandler)
+        : this(provider, tools, options, new DefaultConsoleIO(), toolConfirmationHandler, null, null)
+    {
+    }
+
+    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, string? sessionFilePath = null)
+        : this(provider, tools, options, new DefaultConsoleIO(), null, sessionFilePath, null)
+    {
+    }
+
+    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, SessionCli sessionCli)
+        : this(provider, tools, options, new DefaultConsoleIO(), null, null, sessionCli)
     {
     }
 
     internal AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, 
-        IConsoleIO console, Func<ToolCall, Task<bool>>? toolConfirmationHandler = null)
+        IConsoleIO console, Func<ToolCall, Task<bool>>? toolConfirmationHandler = null, 
+        string? sessionFilePath = null, SessionCli? sessionCli = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
         _options = options ?? new ChatOptions();
         _console = console ?? new DefaultConsoleIO();
         _toolConfirmationHandler = toolConfirmationHandler;
-        _session = new SessionStore();
+        _sessionFilePath = sessionFilePath;
+        _sessionCli = sessionCli;
         _ui = new ConsoleUI();
         _toolCallCount = 0;
+
+        if (sessionCli != null)
+        {
+            sessionCli.InitializeAsync().GetAwaiter().GetResult();
+            _session = sessionCli.CurrentSession;
+        }
+        else
+        {
+            _session = new SessionStore();
+            if (_sessionFilePath != null)
+            {
+                _sessionPersistence = new SessionPersistence();
+                var loadedSession = _sessionPersistence.LoadSessionAsync(_sessionFilePath).GetAwaiter().GetResult();
+                foreach (var msg in loadedSession.Messages)
+                {
+                    _session.AddMessage(msg);
+                }
+            }
+        }
     }
 
     public void RegisterTool(ITool tool)
@@ -75,7 +199,20 @@ public class AgentLoop : IAgentLoop
         if (string.IsNullOrWhiteSpace(message))
             throw new ArgumentException("Message cannot be empty", nameof(message));
 
-        _session.AddMessage(ChatMessage.CreateText(ChatRole.User, message));
+        var userMessage = ChatMessage.CreateText(ChatRole.User, message);
+        
+        if (_sessionCli != null)
+        {
+            await _sessionCli.AppendMessageAsync(userMessage);
+        }
+        else if (_session != null)
+        {
+            _session.AddMessage(userMessage);
+            if (_sessionPersistence != null && _sessionFilePath != null)
+            {
+                await _sessionPersistence.AppendToSessionAsync(userMessage, _sessionFilePath, cancellationToken);
+            }
+        }
 
         var startTime = DateTime.Now;
         var totalInputTokens = 0;
@@ -95,7 +232,20 @@ public class AgentLoop : IAgentLoop
 
             if (response.Content.Any())
             {
-                _session.AddMessage(new ChatMessage(ChatRole.Assistant, response.Content));
+                var assistantMessage = new ChatMessage(ChatRole.Assistant, response.Content);
+                
+                if (_sessionCli != null)
+                {
+                    await _sessionCli.AppendMessageAsync(assistantMessage);
+                }
+                else if (_session != null)
+                {
+                    _session.AddMessage(assistantMessage);
+                    if (_sessionPersistence != null && _sessionFilePath != null)
+                    {
+                        await _sessionPersistence.AppendToSessionAsync(assistantMessage, _sessionFilePath, cancellationToken);
+                    }
+                }
             }
 
             if (response.StopReason == "tool_use" && response.ToolCalls.Count > 0)
@@ -103,10 +253,24 @@ public class AgentLoop : IAgentLoop
                 foreach (var toolCall in response.ToolCalls)
                 {
                     var result = await ExecuteToolAsync(toolCall, cancellationToken);
-                    _session.AddMessage(ChatRole.Tool, new[]
+                    
+                    var toolResultMessage = new ChatMessage(ChatRole.Tool, new[]
                     {
                         new ToolResultBlock(toolCall.Id, result.Output, !result.Success)
                     });
+                    
+                    if (_sessionCli != null)
+                    {
+                        await _sessionCli.AppendMessageAsync(toolResultMessage);
+                    }
+                    else if (_session != null)
+                    {
+                        _session.AddMessage(toolResultMessage);
+                        if (_sessionPersistence != null && _sessionFilePath != null)
+                        {
+                            await _sessionPersistence.AppendToSessionAsync(toolResultMessage, _sessionFilePath, cancellationToken);
+                        }
+                    }
                 }
                 continue;
             }
@@ -131,11 +295,28 @@ public class AgentLoop : IAgentLoop
 
             if (input == null) break;
             if (string.IsNullOrWhiteSpace(input)) continue;
+            
             if (input.Trim().ToLower() is "quit" or "exit")
             {
-                _ui.PrintStats(_session.Messages.Count, _toolCallCount);
-                _ui.PrintGoodbye();
+                await SaveAndExitAsync(cancellationToken);
                 break;
+            }
+
+            if (_sessionCli != null && input.StartsWith("/"))
+            {
+                var result = await _sessionCli.TryExecuteCommandAsync(input);
+                if (result.IsCommand)
+                {
+                    if (result.Success)
+                    {
+                        _console.WriteLine(result.Message);
+                    }
+                    else
+                    {
+                        _ui.PrintError(result.Message);
+                    }
+                    continue;
+                }
             }
 
             try
@@ -153,6 +334,35 @@ public class AgentLoop : IAgentLoop
         }
     }
 
+    private async Task SaveAndExitAsync(CancellationToken cancellationToken)
+    {
+        if (_sessionCli != null)
+        {
+            await _sessionCli.SaveCurrentSessionAsync();
+            _console.WriteLine($"\nSession saved.");
+            _ui.PrintStats(_sessionCli.CurrentSession.Count, _toolCallCount);
+        }
+        else if (_sessionPersistence != null && _sessionFilePath != null && _session != null)
+        {
+            try
+            {
+                await _sessionPersistence.SaveSessionAsync(_session, _sessionFilePath, cancellationToken);
+                _console.WriteLine($"\nSession saved to {_sessionFilePath}");
+                _ui.PrintStats(_session.Messages.Count, _toolCallCount);
+            }
+            catch (Exception ex)
+            {
+                _ui.PrintError($"Failed to save session: {ex.Message}");
+            }
+        }
+        else if (_session != null)
+        {
+            _ui.PrintStats(_session.Messages.Count, _toolCallCount);
+        }
+        
+        _ui.PrintGoodbye();
+    }
+
     private async Task<StreamResponse> CollectStreamingResponseAsync(CancellationToken cancellationToken)
     {
         _options.Tools = _tools.GetAllTools()
@@ -168,7 +378,7 @@ public class AgentLoop : IAgentLoop
 
         _ui.BeginStream();
 
-        await foreach (var chunk in _provider.CompleteStreamingAsync(_session.Messages, _options, cancellationToken))
+        await foreach (var chunk in _provider.CompleteStreamingAsync(History, _options, cancellationToken))
         {
             if (!string.IsNullOrEmpty(chunk.TextDelta))
             {

@@ -9,7 +9,7 @@ riderModule.iml
 .env.local
 .env.*.local
 *.env
-
+/CodeAgentDemo/sessions/*
 # Secrets and credentials
 **/secrets.json
 **/credentials.json

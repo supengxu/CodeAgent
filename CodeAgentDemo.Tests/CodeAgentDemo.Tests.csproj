@@ -28,11 +28,4 @@
     <ProjectReference Include="..\CodeAgentDemo\CodeAgentDemo.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\CodeAgentDemo\.env">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <Link>.env</Link>
-    </None>
-  </ItemGroup>
-
 </Project>

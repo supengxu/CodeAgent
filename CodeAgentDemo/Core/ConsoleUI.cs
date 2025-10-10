@@ -48,13 +48,74 @@ public class ConsoleUI
     /// </summary>
     public void PrintBanner()
     {
+        const int boxWidth = 62; // 内容区域宽度
+        
         Console.WriteLine();
-        Console.WriteLine($"{ThemeColors[ConsoleTheme.Accent]}╔══════════════════════════════════════════════════════════════╗{ResetColor}");
-        Console.WriteLine($"{ThemeColors[ConsoleTheme.Accent]}║{ResetColor}  {ThemeColors[ConsoleTheme.UserInput]}CodeAgent{ResetColor} - AI 编程助手                          {ThemeColors[ConsoleTheme.Accent]}║{ResetColor}");
-        Console.WriteLine($"{ThemeColors[ConsoleTheme.Accent]}║{ResetColor}                                                              {ThemeColors[ConsoleTheme.Accent]}║{ResetColor}");
-        Console.WriteLine($"{ThemeColors[ConsoleTheme.Accent]}║{ResetColor}  {ThemeColors[ConsoleTheme.Dim]}命令: quit 或 exit 退出{ResetColor}                              {ThemeColors[ConsoleTheme.Accent]}║{ResetColor}");
-        Console.WriteLine($"{ThemeColors[ConsoleTheme.Accent]}╚══════════════════════════════════════════════════════════════╝{ResetColor}");
+        PrintBoxLine('╔', '╗', "═", boxWidth);
+        PrintBoxContent("  CodeAgent - AI 编程助手", boxWidth);
+        PrintBoxContent("", boxWidth);
+        PrintBoxContent("  命令: quit 或 exit 退出", boxWidth);
+        PrintBoxLine('╚', '╝', "═", boxWidth);
         Console.WriteLine();
+    }
+    
+    /// <summary>
+    /// 打印盒子边框线
+    /// </summary>
+    private void PrintBoxLine(char left, char right, string fill, int width)
+    {
+        WriteColor(left.ToString(), ConsoleTheme.Accent);
+        WriteColor(string.Concat(Enumerable.Repeat(fill, width)), ConsoleTheme.Accent);
+        WriteColor(right.ToString(), ConsoleTheme.Accent);
+        Console.WriteLine();
+    }
+    
+    /// <summary>
+    /// 打印盒子内容行（自动对齐）
+    /// </summary>
+    private void PrintBoxContent(string content, int width)
+    {
+        WriteColor("║", ConsoleTheme.Accent);
+        WriteColor(PadRightDisplay(content, width), ConsoleTheme.Default);
+        WriteColor("║", ConsoleTheme.Accent);
+        Console.WriteLine();
+    }
+    
+    /// <summary>
+    /// 按显示宽度右填充空格（中文字符占2个显示宽度）
+    /// </summary>
+    private static string PadRightDisplay(string text, int totalWidth)
+    {
+        var displayWidth = GetDisplayWidth(text);
+        var padding = totalWidth - displayWidth;
+        return text + new string(' ', Math.Max(0, padding));
+    }
+    
+    /// <summary>
+    /// 计算字符串的终端显示宽度
+    /// </summary>
+    private static int GetDisplayWidth(string text)
+    {
+        var width = 0;
+        foreach (var c in text)
+        {
+            // CJK 统一汉字范围 + CJK 扩展等
+            width += IsWideChar(c) ? 2 : 1;
+        }
+        return width;
+    }
+    
+    /// <summary>
+    /// 判断字符是否为宽字符（在终端占2个显示宽度）
+    /// </summary>
+    private static bool IsWideChar(char c)
+    {
+        // CJK 统一汉字、扩展A、扩展B、符号和标点、全角字符等
+        return c >= 0x4E00 && c <= 0x9FFF  // CJK 统一汉字
+            || c >= 0x3400 && c <= 0x4DBF  // CJK 扩展A
+            || c >= 0x20000 && c <= 0x2A6DF // CJK 扩展B (需要代理对，这里简化处理)
+            || c >= 0x3000 && c <= 0x303F  // CJK 符号和标点
+            || c >= 0xFF00 && c <= 0xFFEF; // 全角字符
     }
 
     /// <summary>

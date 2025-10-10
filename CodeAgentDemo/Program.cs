@@ -1,10 +1,25 @@
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;
 using DotNetEnv;
 
-Env.Load();
+var envPaths = new[]
+{
+    Path.Combine(Directory.GetCurrentDirectory(), "CodeAgentDemo", ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+    Path.Combine(AppContext.BaseDirectory, ".env")
+};
+
+foreach (var envPath in envPaths)
+{
+    if (File.Exists(envPath))
+    {
+        Env.Load(envPath);
+        break;
+    }
+}
 
 try
 {
@@ -28,7 +43,10 @@ try
         EnableThinking = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var et) && et
     };
 
-    var agent = new AgentLoop(provider, tools, options);
+    var sessionsDir = Path.Combine(Directory.GetCurrentDirectory(), "sessions");
+    var sessionCli = new SessionCli(sessionsDir);
+    
+    var agent = new AgentLoop(provider, tools, options, sessionCli);
     await agent.RunAsync();
 }
 catch (Exception ex)

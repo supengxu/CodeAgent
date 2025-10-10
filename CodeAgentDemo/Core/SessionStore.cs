@@ -4,9 +4,9 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Manages chat message history for a session.
+/// Manages chat message history for a session, with optional JSONL persistence.
 /// </summary>
-public class SessionStore
+public partial class SessionStore
 {
     private readonly List<ChatMessage> _messages = new();
     
@@ -52,4 +52,11 @@ public class SessionStore
     /// Gets the number of messages in the session.
     /// </summary>
     public int Count => _messages.Count;
+
+    public SessionStore() { }
+    
+    public SessionStore(List<ChatMessage> initialMessages)
+    {
+        _messages = initialMessages ?? new List<ChatMessage>();
+    }
 }
