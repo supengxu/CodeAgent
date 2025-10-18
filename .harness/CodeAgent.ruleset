@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="CodeAgent Rules" Description="CodeAgent 项目代码分析规则集" ToolsVersion="17.0">
+  
+  <!-- 
+    Harness Engineering 规则集设计原则:
+    - Error: 必须修复的问题（安全、正确性）
+    - Warning: 建议修复的问题（性能、风格）
+    - None: 在本项目不适用的规则
+  -->
+  
+  <!-- 安全规则 -->
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp" RuleNamespace="Microsoft.CodeAnalysis.CSharp">
+    <!-- CA1031: 异常捕获过宽 - 工具执行需要捕获所有异常 -->
+    <Rule Id="CA1031" Action="None" />
+    <!-- CA1054: URI 参数不应为字符串 -->
+    <Rule Id="CA1054" Action="None" />
+    <!-- CA1062: 参数空检查 - 暂时禁用，逐步修复 -->
+    <Rule Id="CA1062" Action="None" />
+    <!-- CA1303: 不要将文本作为本地化参数传递 -->
+    <Rule Id="CA1303" Action="None" />
+    <!-- CA1716: 标识符不应与关键字匹配 -->
+    <Rule Id="CA1716" Action="None" />
+    <!-- CA2007: ConfigureAwait - 控制台应用不需要 -->
+    <Rule Id="CA2007" Action="None" />
+    <!-- CA1032: 实现标准异常构造函数 -->
+    <Rule Id="CA1032" Action="None" />
+  </Rules>
+  
+  <!-- 设计规则 -->
+  <Rules AnalyzerId="Microsoft.Design" RuleNamespace="Microsoft.Design">
+    <!-- CA1001: 具有可释放字段的类型应该是可释放的 -->
+    <Rule Id="CA1001" Action="Warning" />
+    <!-- CA1014: 用 CLSCompliant 标记程序集 -->
+    <Rule Id="CA1014" Action="None" />
+  </Rules>
+  
+  <!-- 性能规则 -->
+  <Rules AnalyzerId="Microsoft.Performance" RuleNamespace="Microsoft.Performance">
+    <!-- CA1805: 避免不必要的初始化 -->
+    <Rule Id="CA1805" Action="None" />
+    <!-- CA1822: 将成员标记为 static - 暂时禁用，逐步修复 -->
+    <Rule Id="CA1822" Action="None" />
+    <!-- CA1836: 优先使用 IsEmpty 而不是 Count -->
+    <Rule Id="CA1836" Action="None" />
+  </Rules>
+  
+  <!-- 代码质量规则 -->
+  <Rules AnalyzerId="Microsoft.QualityGuidelines" RuleNamespace="Microsoft.QualityGuidelines">
+    <!-- CA1827: 不要对 Any() 使用 Count()/LongCount() -->
+    <Rule Id="CA1827" Action="None" />
+    <!-- CA1829: 使用 Length/Count 属性而不是 Count() 方法 -->
+    <Rule Id="CA1829" Action="None" />
+  </Rules>
+  
+  <!-- 使用规则 -->
+  <Rules AnalyzerId="Microsoft.Usage" RuleNamespace="Microsoft.Usage">
+    <!-- CA2201: 不要引发保留的异常类型 -->
+    <Rule Id="CA2201" Action="None" />
+    <!-- CA2211: 非常量字段不应可见 -->
+    <Rule Id="CA2211" Action="None" />
+  </Rules>
+  
+</RuleSet>

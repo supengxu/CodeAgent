@@ -124,8 +124,8 @@ public class BashTool : ITool
             timeoutMs = Math.Min(customTimeout, 600000);
         }
 
-        var description = arguments.TryGetProperty("description", out var descProp) 
-            ? descProp.GetString() ?? "Execute bash command" 
+        var description = arguments.TryGetProperty("description", out var descProp)
+            ? descProp.GetString() ?? "Execute bash command"
             : "Execute bash command";
 
         try

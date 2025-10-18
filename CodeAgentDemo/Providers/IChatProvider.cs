@@ -12,7 +12,7 @@ public interface IChatProvider
     /// Gets the provider name.
     /// </summary>
     string ProviderName { get; }
-    
+
     /// <summary>
     /// Streams chat completion responses.
     /// </summary>

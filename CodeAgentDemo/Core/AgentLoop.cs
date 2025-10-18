@@ -18,17 +18,17 @@ public class DefaultConsoleIO : IConsoleIO
 {
     public void Write(string value) => Console.Write(value);
     public void WriteLine(string? value = null) => Console.WriteLine(value ?? string.Empty);
-    
+
     public string? ReadLine()
     {
         var input = new StringBuilder();
         var history = new List<string>();
         var historyIndex = -1;
-        
+
         while (true)
         {
             var key = Console.ReadKey(true);
-            
+
             switch (key.Key)
             {
                 case ConsoleKey.Enter:
@@ -39,7 +39,7 @@ public class DefaultConsoleIO : IConsoleIO
                         historyIndex = history.Count;
                     }
                     return input.ToString();
-                    
+
                 case ConsoleKey.Backspace:
                     if (input.Length > 0)
                     {
@@ -49,7 +49,7 @@ public class DefaultConsoleIO : IConsoleIO
                         Console.Write(new string('\b', displayWidth) + new string(' ', displayWidth) + new string('\b', displayWidth));
                     }
                     break;
-                    
+
                 case ConsoleKey.UpArrow:
                     if (history.Count > 0 && historyIndex > 0)
                     {
@@ -60,7 +60,7 @@ public class DefaultConsoleIO : IConsoleIO
                         Console.Write(input.ToString());
                     }
                     break;
-                    
+
                 case ConsoleKey.DownArrow:
                     if (historyIndex < history.Count - 1)
                     {
@@ -71,12 +71,12 @@ public class DefaultConsoleIO : IConsoleIO
                         Console.Write(input.ToString());
                     }
                     break;
-                    
+
                 case ConsoleKey.Escape:
                     ClearLine(input);
                     input.Clear();
                     break;
-                    
+
                 default:
                     if (!char.IsControl(key.KeyChar))
                     {
@@ -87,17 +87,17 @@ public class DefaultConsoleIO : IConsoleIO
             }
         }
     }
-    
+
     private void ClearLine(StringBuilder input)
     {
         var totalWidth = 0;
         foreach (var c in input.ToString())
             totalWidth += GetDisplayWidth(c);
-        
+
         if (totalWidth > 0)
             Console.Write(new string('\b', totalWidth) + new string(' ', totalWidth) + new string('\b', totalWidth));
     }
-    
+
     private static int GetDisplayWidth(char c)
     {
         if (c >= 0x4E00 && c <= 0x9FFF ||
@@ -139,7 +139,7 @@ public class AgentLoop : IAgentLoop
     {
     }
 
-    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, 
+    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
         Func<ToolCall, Task<bool>>? toolConfirmationHandler)
         : this(provider, tools, options, new DefaultConsoleIO(), toolConfirmationHandler, null, null)
     {
@@ -155,8 +155,8 @@ public class AgentLoop : IAgentLoop
     {
     }
 
-    internal AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, 
-        IConsoleIO console, Func<ToolCall, Task<bool>>? toolConfirmationHandler = null, 
+    internal AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
+        IConsoleIO console, Func<ToolCall, Task<bool>>? toolConfirmationHandler = null,
         string? sessionFilePath = null, SessionCli? sessionCli = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -200,7 +200,7 @@ public class AgentLoop : IAgentLoop
             throw new ArgumentException("Message cannot be empty", nameof(message));
 
         var userMessage = ChatMessage.CreateText(ChatRole.User, message);
-        
+
         if (_sessionCli != null)
         {
             await _sessionCli.AppendMessageAsync(userMessage);
@@ -223,7 +223,7 @@ public class AgentLoop : IAgentLoop
             cancellationToken.ThrowIfCancellationRequested();
 
             var response = await CollectStreamingResponseAsync(cancellationToken);
-            
+
             if (response.Usage != null)
             {
                 totalInputTokens += response.Usage.InputTokens;
@@ -233,7 +233,7 @@ public class AgentLoop : IAgentLoop
             if (response.Content.Any())
             {
                 var assistantMessage = new ChatMessage(ChatRole.Assistant, response.Content);
-                
+
                 if (_sessionCli != null)
                 {
                     await _sessionCli.AppendMessageAsync(assistantMessage);
@@ -253,12 +253,12 @@ public class AgentLoop : IAgentLoop
                 foreach (var toolCall in response.ToolCalls)
                 {
                     var result = await ExecuteToolAsync(toolCall, cancellationToken);
-                    
+
                     var toolResultMessage = new ChatMessage(ChatRole.Tool, new[]
                     {
                         new ToolResultBlock(toolCall.Id, result.Output, !result.Success)
                     });
-                    
+
                     if (_sessionCli != null)
                     {
                         await _sessionCli.AppendMessageAsync(toolResultMessage);
@@ -276,8 +276,8 @@ public class AgentLoop : IAgentLoop
             }
 
             var endTime = DateTime.Now;
-            _ui.PrintResponseUsage(startTime, endTime, 
-                totalInputTokens > 0 ? totalInputTokens : null, 
+            _ui.PrintResponseUsage(startTime, endTime,
+                totalInputTokens > 0 ? totalInputTokens : null,
                 totalOutputTokens > 0 ? totalOutputTokens : null);
 
             return new AgentResponse(response.Content, response.StopReason);
@@ -295,7 +295,7 @@ public class AgentLoop : IAgentLoop
 
             if (input == null) break;
             if (string.IsNullOrWhiteSpace(input)) continue;
-            
+
             if (input.Trim().ToLower() is "quit" or "exit")
             {
                 await SaveAndExitAsync(cancellationToken);
@@ -359,7 +359,7 @@ public class AgentLoop : IAgentLoop
         {
             _ui.PrintStats(_session.Messages.Count, _toolCallCount);
         }
-        
+
         _ui.PrintGoodbye();
     }
 
@@ -406,7 +406,7 @@ public class AgentLoop : IAgentLoop
             {
                 stopReason = chunk.StopReason;
             }
-            
+
             if (chunk.Usage != null)
             {
                 usage = chunk.Usage;
@@ -486,7 +486,7 @@ public class AgentLoop : IAgentLoop
             {
                 _ui.PrintToolConfirmation(toolCall.Name);
                 _console.Write("    执行? [y/N]: ");
-                
+
                 var confirmation = _console.ReadLine();
                 confirmed = confirmation?.ToLower() == "y";
             }

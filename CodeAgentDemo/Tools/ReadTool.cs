@@ -9,19 +9,19 @@ namespace CodeAgentDemo.Tools;
 public class ReadTool : ITool
 {
     private readonly string _workDir;
-    
+
     private const int DefaultReadLimit = 2000;
     private const int MaxLineLength = 2000;
     private const int MaxBytes = 50 * 1024;
     private const string MaxBytesLabel = "50 KB";
-    
+
     private static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".zip", ".tar", ".gz", ".exe", ".dll", ".so", ".class", ".jar", ".war", ".7z",
         ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp",
         ".bin", ".dat", ".obj", ".o", ".a", ".lib", ".wasm", ".pyc", ".pyo"
     };
-    
+
     private static readonly HashSet<string> ImageMimeTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/tiff"
@@ -33,8 +33,8 @@ public class ReadTool : ITool
     }
 
     public string Name => "read";
-    
-    public string Description => 
+
+    public string Description =>
         "读取本地文件系统的文件或目录。如果路径不存在，将返回错误。\n\n" +
         "用法：\n" +
         "- filePath 参数应为绝对路径。\n" +
@@ -81,7 +81,7 @@ public class ReadTool : ITool
             return new ToolResult(false, "filePath cannot be empty");
 
         // 解析路径
-var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Combine(_workDir, filePath));
+        var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Combine(_workDir, filePath));
 
         var offset = 1;
         if (arguments.TryGetProperty("offset", out var offsetProp))
@@ -109,7 +109,7 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
         return await ReadFileAsync(fullPath, offset, limit, cancellationToken);
     }
 
-    private async Task<ToolResult> ReadDirectoryAsync(string dirPath, int offset, int limit)
+    private Task<ToolResult> ReadDirectoryAsync(string dirPath, int offset, int limit)
     {
         try
         {
@@ -134,19 +134,19 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
             {
                 sb.AppendLine(entry);
             }
-            
+
             if (truncated)
                 sb.AppendLine($"\n(Showing {sliced.Count} of {entries.Count} entries. Use 'offset' parameter to read beyond entry {offset + sliced.Count})");
             else
                 sb.AppendLine($"\n({entries.Count} entries)");
-            
+
             sb.AppendLine("</entries>");
 
-            return new ToolResult(true, sb.ToString());
+            return Task.FromResult(new ToolResult(true, sb.ToString()));
         }
         catch (Exception ex)
         {
-            return new ToolResult(false, $"Error reading directory: {ex.Message}");
+            return Task.FromResult(new ToolResult(false, $"Error reading directory: {ex.Message}"));
         }
     }
 
@@ -181,7 +181,7 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
     private async Task<ToolResult> ReadTextFileAsync(string filePath, int offset, int limit, CancellationToken cancellationToken)
     {
         var lines = await File.ReadAllLinesAsync(filePath, cancellationToken);
-        
+
         if (lines.Length < offset && !(lines.Length == 0 && offset == 1))
         {
             return new ToolResult(false, $"Offset {offset} is out of range for this file ({lines.Length} lines)");
@@ -221,7 +221,7 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
         sb.AppendLine($"<path>{filePath}</path>");
         sb.AppendLine("<type>file</type>");
         sb.AppendLine("<content>");
-        
+
         for (var i = 0; i < raw.Count; i++)
         {
             sb.AppendLine($"{i + offset}: {raw[i]}");
@@ -253,7 +253,7 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
     {
         var bytes = await File.ReadAllBytesAsync(filePath);
         var base64 = Convert.ToBase64String(bytes);
-        
+
         var sb = new StringBuilder();
         sb.AppendLine($"<path>{filePath}</path>");
         sb.AppendLine("<type>image</type>");
@@ -268,7 +268,7 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
     {
         var bytes = await File.ReadAllBytesAsync(filePath);
         var base64 = Convert.ToBase64String(bytes);
-        
+
         var sb = new StringBuilder();
         sb.AppendLine($"<path>{filePath}</path>");
         sb.AppendLine("<type>pdf</type>");
@@ -339,7 +339,7 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
     {
         var dir = Path.GetDirectoryName(filePath) ?? "";
         var baseName = Path.GetFileName(filePath);
-        
+
         if (!Directory.Exists(dir))
             return [];
 
@@ -347,8 +347,8 @@ var fullPath = Path.GetFullPath(Path.IsPathRooted(filePath) ? filePath : Path.Co
         {
             return Directory.GetFiles(dir)
                 .Select(Path.GetFileName)
-                .Where(name => 
-                    name!.Contains(baseName, StringComparison.OrdinalIgnoreCase) || 
+                .Where(name =>
+                    name!.Contains(baseName, StringComparison.OrdinalIgnoreCase) ||
                     baseName.Contains(name, StringComparison.OrdinalIgnoreCase))
                 .Take(3)
                 .ToList()!;

@@ -20,7 +20,7 @@ public sealed class JsonlStreamProcessor
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true
         };
-        
+
         // Add the ContentBlock polymorphic converter
         _jsonOptions.Converters.Add(new ContentBlockJsonConverterFactory());
     }
@@ -34,8 +34,8 @@ public sealed class JsonlStreamProcessor
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Task representing the completion of the operation</returns>
     public async Task ProcessJsonlFileAsync(
-        string filePath, 
-        Func<ChatMessage, Task<bool>> processor, 
+        string filePath,
+        Func<ChatMessage, Task<bool>> processor,
         CancellationToken cancellationToken = default)
     {
         if (!File.Exists(filePath))
@@ -44,10 +44,10 @@ public sealed class JsonlStreamProcessor
         }
 
         using var fileStream = new FileStream(
-            filePath, 
-            FileMode.Open, 
-            FileAccess.Read, 
-            FileShare.ReadWrite, 
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite,
             bufferSize: 8192, // Larger buffer for better sequential throughput
             useAsync: true);
 
@@ -59,7 +59,7 @@ public sealed class JsonlStreamProcessor
         {
             lineNumber++;
             line = line.Trim();
-            
+
             if (string.IsNullOrEmpty(line))
             {
                 continue;
@@ -94,8 +94,8 @@ public sealed class JsonlStreamProcessor
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Task representing the completion of the operation</returns>
     public async Task ProcessJsonlStreamAsync(
-        Stream stream, 
-        Func<ChatMessage, Task<bool>> processor, 
+        Stream stream,
+        Func<ChatMessage, Task<bool>> processor,
         CancellationToken cancellationToken = default)
     {
         using var reader = new StreamReader(stream);
@@ -106,7 +106,7 @@ public sealed class JsonlStreamProcessor
         {
             lineNumber++;
             line = line.Trim();
-            
+
             if (string.IsNullOrEmpty(line))
             {
                 continue;
@@ -141,7 +141,7 @@ public sealed class JsonlStreamProcessor
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>IAsyncEnumerable of ChatMessage</returns>
     public async IAsyncEnumerable<ChatMessage> ReadJsonlFileAsync(
-        string filePath, 
+        string filePath,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (!File.Exists(filePath))
@@ -150,10 +150,10 @@ public sealed class JsonlStreamProcessor
         }
 
         using var fileStream = new FileStream(
-            filePath, 
-            FileMode.Open, 
-            FileAccess.Read, 
-            FileShare.ReadWrite, 
+            filePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.ReadWrite,
             bufferSize: 8192,
             useAsync: true);
 
@@ -165,7 +165,7 @@ public sealed class JsonlStreamProcessor
         {
             lineNumber++;
             line = line.Trim();
-            
+
             if (string.IsNullOrEmpty(line))
             {
                 continue;
@@ -210,7 +210,7 @@ public sealed class JsonlStreamProcessor
         }
 
         var jsonLine = JsonSerializer.Serialize(chatMessage, _jsonOptions);
-        
+
         // File.AppendText uses UTF8 encoding by default and handles line ending properly
         using var fileStream = new FileStream(
             filePath,
@@ -219,12 +219,12 @@ public sealed class JsonlStreamProcessor
             FileShare.Read,
             bufferSize: 4096,
             useAsync: true);
-            
+
         using var writer = new StreamWriter(fileStream);
         await writer.WriteLineAsync(jsonLine);
         await writer.FlushAsync(); // Ensure data is physically written
     }
-    
+
     private void OnCriticalLineError(string fileOrStream, int lineNumber, string content, JsonException ex)
     {
         Console.Error.WriteLine($"Warning: Invalid JSON in {fileOrStream} at line {lineNumber}: {ex.Message}");

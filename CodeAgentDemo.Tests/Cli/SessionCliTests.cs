@@ -31,7 +31,7 @@ public class SessionCliTests : IDisposable
     public async Task InitializeAsync_ShouldCreateDefaultSession()
     {
         await _sessionCli.InitializeAsync();
-        
+
         _sessionCli.CurrentSession.Should().NotBeNull();
         _sessionCli.CurrentSessionId.Should().NotBeNullOrEmpty();
     }
@@ -40,7 +40,7 @@ public class SessionCliTests : IDisposable
     public async Task TryExecuteCommandAsync_WithNonSlashInput_ShouldReturnNotACommand()
     {
         var result = await _sessionCli.TryExecuteCommandAsync("hello world");
-        
+
         result.IsCommand.Should().BeFalse();
     }
 
@@ -48,7 +48,7 @@ public class SessionCliTests : IDisposable
     public async Task TryExecuteCommandAsync_WithSlashInput_ShouldReturnIsCommand()
     {
         var result = await _sessionCli.TryExecuteCommandAsync("/help");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
     }
@@ -58,9 +58,9 @@ public class SessionCliTests : IDisposable
     {
         await _sessionCli.InitializeAsync();
         var oldSessionId = _sessionCli.CurrentSessionId;
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/new test-session");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
         result.Message.Should().Contain("test-session");
@@ -71,9 +71,9 @@ public class SessionCliTests : IDisposable
     public async Task ListCommand_ShouldReturnSessionList()
     {
         await _sessionCli.InitializeAsync();
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/list");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
         result.Message.Should().Contain("Available sessions");
@@ -83,9 +83,9 @@ public class SessionCliTests : IDisposable
     public async Task ContextCommand_ShouldReturnSessionStats()
     {
         await _sessionCli.InitializeAsync();
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/context");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
         result.Message.Should().Contain("Current Session:");
@@ -96,7 +96,7 @@ public class SessionCliTests : IDisposable
     public async Task HelpCommand_ShouldReturnHelpText()
     {
         var result = await _sessionCli.TryExecuteCommandAsync("/help");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
         result.Message.Should().Contain("/new");
@@ -108,9 +108,9 @@ public class SessionCliTests : IDisposable
     public async Task SwitchCommand_WithInvalidId_ShouldReturnError()
     {
         await _sessionCli.InitializeAsync();
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/switch nonexistent");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("not found");
@@ -120,7 +120,7 @@ public class SessionCliTests : IDisposable
     public async Task UnknownCommand_ShouldReturnError()
     {
         var result = await _sessionCli.TryExecuteCommandAsync("/unknown");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeFalse();
         result.Message.Should().Contain("Unknown command");
@@ -130,9 +130,9 @@ public class SessionCliTests : IDisposable
     public async Task ClearCommand_WithoutForce_ShouldAskForConfirmation()
     {
         await _sessionCli.InitializeAsync();
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/clear");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
         result.Message.Should().Contain("--force");
@@ -143,9 +143,9 @@ public class SessionCliTests : IDisposable
     {
         await _sessionCli.InitializeAsync();
         var message = ChatMessage.CreateText(ChatRole.User, "Hello");
-        
+
         await _sessionCli.AppendMessageAsync(message);
-        
+
         _sessionCli.CurrentSession.Count.Should().Be(1);
     }
 
@@ -154,9 +154,9 @@ public class SessionCliTests : IDisposable
     {
         await _sessionCli.InitializeAsync();
         await _sessionCli.TryExecuteCommandAsync("/new my-test-session");
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/switch my-test");
-        
+
         result.Success.Should().BeTrue();
     }
 
@@ -164,9 +164,9 @@ public class SessionCliTests : IDisposable
     public async Task LsAlias_ShouldWorkSameAsList()
     {
         await _sessionCli.InitializeAsync();
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/ls");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
     }
@@ -175,9 +175,9 @@ public class SessionCliTests : IDisposable
     public async Task CtxAlias_ShouldWorkSameAsContext()
     {
         await _sessionCli.InitializeAsync();
-        
+
         var result = await _sessionCli.TryExecuteCommandAsync("/ctx");
-        
+
         result.IsCommand.Should().BeTrue();
         result.Success.Should().BeTrue();
         result.Message.Should().Contain("Current Session:");

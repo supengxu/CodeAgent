@@ -26,7 +26,7 @@ try
     var provider = ChatProviderFactory.Create();
     var tools = new ToolRegistry();
     var workDir = Directory.GetCurrentDirectory();
-    
+
     tools.Register(new ReadTool(workDir));
     tools.Register(new WriteTool(workDir));
     tools.Register(new EditTool(workDir));
@@ -45,7 +45,7 @@ try
 
     var sessionsDir = Path.Combine(Directory.GetCurrentDirectory(), "sessions");
     var sessionCli = new SessionCli(sessionsDir);
-    
+
     var agent = new AgentLoop(provider, tools, options, sessionCli);
     await agent.RunAsync();
 }

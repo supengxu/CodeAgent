@@ -82,7 +82,7 @@ public class ReadToolTests
         var filePath = Path.Combine(_tempDir, "test.txt");
         await File.WriteAllTextAsync(filePath, "Hello World");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)}}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -97,7 +97,7 @@ public class ReadToolTests
         File.WriteAllText(Path.Combine(_tempDir, "file2.txt"), "content2");
         Directory.CreateDirectory(Path.Combine(_tempDir, "subdir"));
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{_tempDir}\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(_tempDir)}}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -113,7 +113,7 @@ public class ReadToolTests
         var filePath = Path.Combine(_tempDir, "lines.txt");
         await File.WriteAllLinesAsync(filePath, new[] { "Line 1", "Line 2", "Line 3", "Line 4", "Line 5" });
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"offset\":3}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"offset\":3}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -128,7 +128,7 @@ public class ReadToolTests
         var filePath = Path.Combine(_tempDir, "limited.txt");
         await File.WriteAllLinesAsync(filePath, Enumerable.Range(1, 100).Select(i => $"Line {i}"));
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"limit\":10}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"limit\":10}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -223,7 +223,7 @@ public class WriteToolTests
     {
         var filePath = Path.Combine(_tempDir, "newfile.txt");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"content\":\"Hello World\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"content\":\"Hello World\"}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -237,7 +237,7 @@ public class WriteToolTests
     {
         var filePath = Path.Combine(_tempDir, "subdir", "nested.txt");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"content\":\"nested content\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"content\":\"nested content\"}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -354,7 +354,7 @@ public class EditToolTests
         var filePath = Path.Combine(_tempDir, "edit.txt");
         await File.WriteAllTextAsync(filePath, "Hello old World");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"oldString\":\"old\",\"newString\":\"new\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"oldString\":\"old\",\"newString\":\"new\"}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -368,7 +368,7 @@ public class EditToolTests
         var filePath = Path.Combine(_tempDir, "same.txt");
         await File.WriteAllTextAsync(filePath, "content");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"oldString\":\"text\",\"newString\":\"text\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"oldString\":\"text\",\"newString\":\"text\"}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 
@@ -382,7 +382,7 @@ public class EditToolTests
         var filePath = Path.Combine(_tempDir, "notfound.txt");
         await File.WriteAllTextAsync(filePath, "Hello World");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"oldString\":\"UNIQUE_STRING_12345\",\"newString\":\"new\"}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"oldString\":\"UNIQUE_STRING_12345\",\"newString\":\"new\"}}").RootElement;
 
         var act = async () => await _tool.ExecuteAsync(args);
 
@@ -395,7 +395,7 @@ public class EditToolTests
         var filePath = Path.Combine(_tempDir, "multiple.txt");
         await File.WriteAllTextAsync(filePath, "foo bar foo baz foo");
 
-        var args = JsonDocument.Parse($"{{\"filePath\":\"{filePath}\",\"oldString\":\"foo\",\"newString\":\"qux\",\"replaceAll\":true}}").RootElement;
+        var args = JsonDocument.Parse($"{{\"filePath\":{JsonSerializer.Serialize(filePath)},\"oldString\":\"foo\",\"newString\":\"qux\",\"replaceAll\":true}}").RootElement;
 
         var result = await _tool.ExecuteAsync(args);
 

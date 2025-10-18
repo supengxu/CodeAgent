@@ -21,7 +21,7 @@ public class JsonlExample
     public async Task DemonstratePersistenceAsync()
     {
         var sessionStore = new SessionStore();
-        
+
         // Add sample messages to the session store
         sessionStore.AddMessage(ChatRole.User, "Hello world");
         sessionStore.AddMessage(ChatRole.Assistant, "Greetings, user!");
@@ -29,10 +29,10 @@ public class JsonlExample
             new TextBlock("System initialized"),
             new ThinkingBlock("Processing user request")
         ]);
-        
+
         var sampleFilePath = Path.Join(Path.GetTempPath(), "session.jsonl");
         Console.WriteLine($"Saving session to: {sampleFilePath}");
-        
+
         // Save the session to JSONL file
         await _sessionPersistence.SaveSessionAsync(sessionStore, sampleFilePath);
         Console.WriteLine("Session saved successfully");
@@ -40,7 +40,7 @@ public class JsonlExample
         // Load the session back
         var loadedSession = await _sessionPersistence.LoadSessionAsync(sampleFilePath);
         Console.WriteLine($"Loaded session with {loadedSession.Count} messages:");
-        
+
         // Display the loaded messages
         foreach (var message in loadedSession.Messages)
         {
@@ -49,13 +49,13 @@ public class JsonlExample
 
         // Now use streaming processor for large sets of data
         Console.WriteLine("\nUsing streaming processor to append additional messages...");
-        
+
         // Add a few more messages and append them
         var newMessage = ChatMessage.CreateText(ChatRole.User, "Additional message after persistence");
         await _sessionPersistence.AppendToSessionAsync(newMessage, sampleFilePath);
-        
+
         Console.WriteLine("Additional message appended.");
-        
+
         // Demonstrate streaming processing of the file
         Console.WriteLine("\nStreaming through all messages:");
         await foreach (var message in _streamProcessor.ReadJsonlFileAsync(sampleFilePath))

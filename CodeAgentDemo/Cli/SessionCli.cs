@@ -18,7 +18,7 @@ public class SessionCli
     {
         _sessionsDir = sessionsDir;
         Directory.CreateDirectory(_sessionsDir);
-        
+
         _sessionManager = new SessionManager(_sessionsDir);
         _persistence = new SessionPersistence();
         _currentSession = new SessionStore();
@@ -51,7 +51,7 @@ public class SessionCli
     public async Task InitializeAsync()
     {
         var result = await _sessionManager.LoadMostRecentSessionAsync();
-        
+
         if (result.HasValue)
         {
             _currentSession = result.Value.store;
@@ -74,7 +74,7 @@ public class SessionCli
     public async Task AppendMessageAsync(ChatMessage message)
     {
         _currentSession.AddMessage(message);
-        
+
         if (!string.IsNullOrEmpty(_currentSessionFilePath))
         {
             await _persistence.AppendToSessionAsync(message, _currentSessionFilePath);
@@ -85,19 +85,19 @@ public class SessionCli
     {
         var sessionName = args.Length > 0 ? args[0] : null;
         await CreateNewSessionAsync(sessionName);
-        
+
         var displayName = string.IsNullOrEmpty(sessionName) ? CurrentSessionId : sessionName;
         return CliResult.Ok($"Created new session: {displayName}");
     }
 
     private async Task CreateNewSessionAsync(string? name)
     {
-        var sessionId = string.IsNullOrEmpty(name) 
-            ? GenerateSessionId() 
+        var sessionId = string.IsNullOrEmpty(name)
+            ? GenerateSessionId()
             : SanitizeSessionId(name);
-        
+
         var (store, filePath) = await _sessionManager.CreateSessionAsync(sessionId);
-        
+
         _currentSession = store;
         _currentSessionFilePath = filePath;
     }
@@ -112,12 +112,12 @@ public class SessionCli
         var sessionId = args[0];
         var sessions = _sessionManager.ListSessions();
         var matches = sessions.Where(s => s.SessionId.StartsWith(sessionId, StringComparison.OrdinalIgnoreCase)).ToList();
-        
+
         if (matches.Count == 0)
         {
             return CliResult.Fail($"Session not found: {sessionId}");
         }
-        
+
         if (matches.Count > 1)
         {
             var matchList = string.Join(", ", matches.Select(s => s.SessionId));
@@ -125,23 +125,23 @@ public class SessionCli
         }
 
         await SaveCurrentSessionAsync();
-        
+
         var result = await _sessionManager.LoadSessionAsync(matches[0].SessionId);
-        
+
         if (result.HasValue)
         {
             _currentSession = result.Value.store;
             _currentSessionFilePath = result.Value.filePath;
             return CliResult.Ok($"Switched to session: {matches[0].SessionId} ({_currentSession.Count} messages)");
         }
-        
+
         return CliResult.Fail($"Failed to load session: {matches[0].SessionId}");
     }
 
     private CliResult HandleListCommand()
     {
         var sessions = _sessionManager.ListSessions();
-        
+
         if (sessions.Count == 0)
         {
             return CliResult.Ok("No sessions found.");
@@ -151,13 +151,13 @@ public class SessionCli
         output.AppendLine("Available sessions:");
         output.AppendLine("ID                   | Modified           | Msgs | Size");
         output.AppendLine("---------------------|--------------------|------|-------");
-        
+
         foreach (var session in sessions)
         {
             var current = session.SessionId == CurrentSessionId ? "*" : " ";
-            output.AppendLine($"{current}{session.SessionId, -19} | " +
+            output.AppendLine($"{current}{session.SessionId,-19} | " +
                               $"{session.LastModified:yyyy-MM-dd HH:mm} | " +
-                              $"{session.MessageCount, -4} | " +
+                              $"{session.MessageCount,-4} | " +
                               $"{FormatFileSize(session.SizeBytes)}");
         }
 
@@ -205,7 +205,7 @@ Available Commands:
 
     private static string GenerateSessionId()
     {
-        return DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + 
+        return DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" +
                Path.GetRandomFileName().Substring(0, 8).Replace(".", "");
     }
 
@@ -213,7 +213,7 @@ Available Commands:
     {
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new string(name.Where(c => !invalid.Contains(c)).ToArray());
-        return sanitized.Length > 0 
+        return sanitized.Length > 0
             ? sanitized.Substring(0, Math.Min(sanitized.Length, 50))
             : GenerateSessionId();
     }
@@ -229,7 +229,7 @@ Available Commands:
                 ToolResultBlock tr => tr.Content.Length,
                 _ => 0
             }));
-        
+
         return totalChars / 4;
     }
 

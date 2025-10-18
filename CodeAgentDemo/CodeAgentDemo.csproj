@@ -5,6 +5,14 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<!-- Harness 硬约束：所有警告作为错误 -->
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<!-- 启用 XML 文档注释生成 -->
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<!-- 禁用 CS1591：控制台应用不需要强制 XML 注释 -->
+		<NoWarn>$(NoWarn);CS1591</NoWarn>
+		<!-- 代码分析规则集 -->
+		<CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)../.harness/CodeAgent.ruleset</CodeAnalysisRuleSet>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -14,6 +22,11 @@
 	<ItemGroup>
 		<PackageReference Include="OpenAI" Version="2.1.0" />
 		<PackageReference Include="DotNetEnv" Version="3.0.0" />
+		<!-- Harness 硬约束：代码质量分析 -->
+		<PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>

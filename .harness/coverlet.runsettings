@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura,json</Format>
+          <!-- 排除测试项目 -->
+          <Exclude>[*]*Tests*</Exclude>
+          <!-- 排除自动生成的代码 -->
+          <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated</ExcludeByAttribute>
+          <!-- 覆盖率阈值：语句覆盖率 ≥ 80% -->
+          <Threshold>80</Threshold>
+          <ThresholdType>Line</ThresholdType>
+          <!-- 输出目录 -->
+          <Output>$(__TestCoverageDir)</Output>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

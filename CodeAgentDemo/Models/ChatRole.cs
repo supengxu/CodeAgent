@@ -9,17 +9,17 @@ public enum ChatRole
     /// System role for providing instructions and context.
     /// </summary>
     System,
-    
+
     /// <summary>
     /// User role for human input.
     /// </summary>
     User,
-    
+
     /// <summary>
     /// Assistant role for AI responses.
     /// </summary>
     Assistant,
-    
+
     /// <summary>
     /// Tool role for tool execution results.
     /// </summary>

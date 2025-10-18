@@ -23,7 +23,7 @@ public class SessionManager
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip
         };
-        
+
         _jsonOptions.Converters.Add(new ContentBlockJsonConverterFactory());
     }
 
@@ -46,19 +46,19 @@ public class SessionManager
     /// </summary>
     /// <param name="sessionId">Unique identifier for the session (without extension)</param>
     /// <returns>New SessionStore instance</returns>
-    public async Task<(SessionStore store, string filePath)> CreateSessionAsync(string sessionId)
+    public Task<(SessionStore store, string filePath)> CreateSessionAsync(string sessionId)
     {
         var filePath = Path.Combine(_sessionsDirectory, $"{sessionId}.jsonl");
-        
+
         var sessionStore = new SessionStore();
-        
+
         // Ensure the file exists (even if empty)
         if (!File.Exists(filePath))
         {
             using var _ = File.Create(filePath);
         }
-        
-        return (sessionStore, filePath);
+
+        return Task.FromResult((sessionStore, filePath));
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public class SessionManager
     public async Task<(SessionStore store, string filePath)?> LoadSessionAsync(string sessionId)
     {
         var filePath = Path.Combine(_sessionsDirectory, $"{sessionId}.jsonl");
-        
+
         if (!File.Exists(filePath))
         {
             return null;
@@ -76,7 +76,7 @@ public class SessionManager
 
         var persistence = new SessionPersistence();
         var sessionStore = await persistence.LoadSessionAsync(filePath);
-        
+
         return (sessionStore, filePath);
     }
 
@@ -91,7 +91,7 @@ public class SessionManager
             var mostRecent = sessions.First();
             return await LoadSessionAsync(mostRecent.SessionId);
         }
-        
+
         return null;
     }
 
@@ -102,7 +102,7 @@ public class SessionManager
     public void DeleteSession(string sessionId)
     {
         var filePath = Path.Combine(_sessionsDirectory, $"{sessionId}.jsonl");
-        
+
         if (File.Exists(filePath))
         {
             File.Delete(filePath);
@@ -116,7 +116,7 @@ public class SessionManager
     {
         var sessionId = Path.GetFileNameWithoutExtension(fileInfo.Name);
         var messageCount = CountMessagesInFile(fileInfo.FullName);
-        
+
         return new SessionInfo(
             SessionId: sessionId,
             FilePath: fileInfo.FullName,

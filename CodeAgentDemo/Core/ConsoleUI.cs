@@ -25,7 +25,7 @@ public class ConsoleUI
 {
     private bool _isThinkingStreaming;
     private bool _thinkingNeedsPrefix;
-    
+
     private static readonly Dictionary<ConsoleTheme, string> ThemeColors = new()
     {
         { ConsoleTheme.Default, "\x1b[0m" },
@@ -49,7 +49,7 @@ public class ConsoleUI
     public void PrintBanner()
     {
         const int boxWidth = 62; // 内容区域宽度
-        
+
         Console.WriteLine();
         PrintBoxLine('╔', '╗', "═", boxWidth);
         PrintBoxContent("  CodeAgent - AI 编程助手", boxWidth);
@@ -58,7 +58,7 @@ public class ConsoleUI
         PrintBoxLine('╚', '╝', "═", boxWidth);
         Console.WriteLine();
     }
-    
+
     /// <summary>
     /// 打印盒子边框线
     /// </summary>
@@ -69,7 +69,7 @@ public class ConsoleUI
         WriteColor(right.ToString(), ConsoleTheme.Accent);
         Console.WriteLine();
     }
-    
+
     /// <summary>
     /// 打印盒子内容行（自动对齐）
     /// </summary>
@@ -80,7 +80,7 @@ public class ConsoleUI
         WriteColor("║", ConsoleTheme.Accent);
         Console.WriteLine();
     }
-    
+
     /// <summary>
     /// 按显示宽度右填充空格（中文字符占2个显示宽度）
     /// </summary>
@@ -90,7 +90,7 @@ public class ConsoleUI
         var padding = totalWidth - displayWidth;
         return text + new string(' ', Math.Max(0, padding));
     }
-    
+
     /// <summary>
     /// 计算字符串的终端显示宽度
     /// </summary>
@@ -104,7 +104,7 @@ public class ConsoleUI
         }
         return width;
     }
-    
+
     /// <summary>
     /// 判断字符是否为宽字符（在终端占2个显示宽度）
     /// </summary>
@@ -130,7 +130,7 @@ public class ConsoleUI
     /// <summary>
     /// 开始流式文本输出
     /// </summary>
-public void BeginStream()
+    public void BeginStream()
     {
         _isThinkingStreaming = false;
         _thinkingNeedsPrefix = true;
@@ -152,14 +152,14 @@ public void BeginStream()
     public void StreamText(string delta)
     {
         if (string.IsNullOrEmpty(delta)) return;
-        
+
         // 如果之前在思考模式，先关闭
         if (_isThinkingStreaming)
         {
             Console.WriteLine();
             _isThinkingStreaming = false;
         }
-        
+
         // 直接输出，不换行
         WriteColor(delta, ConsoleTheme.Assistant);
     }
@@ -170,7 +170,7 @@ public void BeginStream()
     public void StreamThinking(string delta)
     {
         if (string.IsNullOrEmpty(delta)) return;
-        
+
         if (!_isThinkingStreaming)
         {
             Console.WriteLine();
@@ -179,13 +179,13 @@ public void BeginStream()
             _isThinkingStreaming = true;
             _thinkingNeedsPrefix = true;
         }
-        
+
         if (_thinkingNeedsPrefix)
         {
             WriteColor("  ", ConsoleTheme.Thinking);
             _thinkingNeedsPrefix = false;
         }
-        
+
         foreach (var c in delta)
         {
             if (c == '\n')
@@ -254,14 +254,14 @@ public void BeginStream()
     {
         // 清除当前行（"正在执行"状态），然后打印结果
         Console.Write("\r\x1b[2K");  // 回到行首并清除整行
-        
+
         var theme = success ? ConsoleTheme.Success : ConsoleTheme.Error;
         var icon = success ? "✓" : "✗";
-        
+
         WriteColor($"  {icon} ", theme);
         WriteColor(toolName, ConsoleTheme.ToolResult);
         WriteColor(success ? " 完成" : " 失败", theme);
-        
+
         if (!string.IsNullOrEmpty(result))
         {
             Console.WriteLine();
@@ -314,20 +314,20 @@ public void BeginStream()
         WriteColor($"{toolCallCount} 工具调用", ConsoleTheme.Accent);
         Console.WriteLine();
     }
-    
+
     /// <summary>
     /// 打印响应统计（时间和 token）
     /// </summary>
     public void PrintResponseUsage(DateTime startTime, DateTime endTime, int? inputTokens, int? outputTokens)
     {
         var duration = endTime - startTime;
-        var timeStr = duration.TotalSeconds >= 1 
-            ? $"{duration.TotalSeconds:F1}s" 
+        var timeStr = duration.TotalSeconds >= 1
+            ? $"{duration.TotalSeconds:F1}s"
             : $"{duration.TotalMilliseconds:F0}ms";
-        
+
         WriteColor("│  ⏱ ", ConsoleTheme.Dim);
         WriteColor(timeStr, ConsoleTheme.Accent);
-        
+
         if (inputTokens.HasValue && outputTokens.HasValue)
         {
             WriteColor(" · ", ConsoleTheme.Dim);
@@ -336,7 +336,7 @@ public void BeginStream()
             WriteColor($"📤 {outputTokens}", ConsoleTheme.ToolResult);
             WriteColor(" tokens", ConsoleTheme.Dim);
         }
-        
+
         Console.WriteLine();
     }
 
@@ -365,7 +365,7 @@ public void BeginStream()
     {
         if (string.IsNullOrEmpty(json) || json.Length <= maxLength)
             return json;
-        
+
         return json[..maxLength] + "...";
     }
 
@@ -376,7 +376,7 @@ public void BeginStream()
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
             return text;
-        
+
         // 移除换行符
         var singleLine = text.Replace("\n", " ").Replace("\r", "");
         return singleLine[..maxLength] + "...";

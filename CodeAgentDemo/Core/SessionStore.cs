@@ -9,12 +9,12 @@ namespace CodeAgentDemo.Core;
 public partial class SessionStore
 {
     private readonly List<ChatMessage> _messages = new();
-    
+
     /// <summary>
     /// Gets a read-only view of all messages.
     /// </summary>
     public IReadOnlyList<ChatMessage> Messages => new ReadOnlyCollection<ChatMessage>(_messages);
-    
+
     /// <summary>
     /// Adds a message to the history.
     /// </summary>
@@ -23,7 +23,7 @@ public partial class SessionStore
         ArgumentNullException.ThrowIfNull(message);
         _messages.Add(message);
     }
-    
+
     /// <summary>
     /// Creates and adds a text message with the specified role.
     /// </summary>
@@ -31,7 +31,7 @@ public partial class SessionStore
     {
         _messages.Add(ChatMessage.CreateText(role, text));
     }
-    
+
     /// <summary>
     /// Creates and adds a message with the specified role and content.
     /// </summary>
@@ -39,7 +39,7 @@ public partial class SessionStore
     {
         _messages.Add(new ChatMessage(role, content));
     }
-    
+
     /// <summary>
     /// Clears all messages from the session.
     /// </summary>
@@ -47,14 +47,14 @@ public partial class SessionStore
     {
         _messages.Clear();
     }
-    
+
     /// <summary>
     /// Gets the number of messages in the session.
     /// </summary>
     public int Count => _messages.Count;
 
     public SessionStore() { }
-    
+
     public SessionStore(List<ChatMessage> initialMessages)
     {
         _messages = initialMessages ?? new List<ChatMessage>();

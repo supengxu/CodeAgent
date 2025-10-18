@@ -73,20 +73,20 @@ public class WebSearchTool : ITool
         if (string.IsNullOrEmpty(query))
             return new ToolResult(false, "query cannot be empty");
 
-        var numResults = arguments.TryGetProperty("numResults", out var numResultsProp) 
-            ? numResultsProp.GetInt32() 
+        var numResults = arguments.TryGetProperty("numResults", out var numResultsProp)
+            ? numResultsProp.GetInt32()
             : DefaultNumResults;
 
-        var livecrawl = arguments.TryGetProperty("livecrawl", out var livecrawlProp) 
-            ? livecrawlProp.GetString() ?? "fallback" 
+        var livecrawl = arguments.TryGetProperty("livecrawl", out var livecrawlProp)
+            ? livecrawlProp.GetString() ?? "fallback"
             : "fallback";
 
-        var type = arguments.TryGetProperty("type", out var typeProp) 
-            ? typeProp.GetString() ?? "auto" 
+        var type = arguments.TryGetProperty("type", out var typeProp)
+            ? typeProp.GetString() ?? "auto"
             : "auto";
 
-        var contextMaxCharacters = arguments.TryGetProperty("contextMaxCharacters", out var contextProp) 
-            ? contextProp.GetInt32() 
+        var contextMaxCharacters = arguments.TryGetProperty("contextMaxCharacters", out var contextProp)
+            ? contextProp.GetInt32()
             : 10000;
 
         var request = new McpRequest
@@ -115,7 +115,7 @@ public class WebSearchTool : ITool
 
             var jsonContent = JsonSerializer.Serialize(request);
             using var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-            
+
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
             httpRequest.Content = content;
             httpRequest.Headers.Add("Accept", "application/json, text/event-stream");

@@ -94,7 +94,7 @@ public class CodeSearchTool : ITool
 
             var jsonContent = JsonSerializer.Serialize(request);
             using var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-            
+
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, ApiBaseUrl);
             httpRequest.Content = content;
             httpRequest.Headers.Add("Accept", "application/json, text/event-stream");

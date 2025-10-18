@@ -31,7 +31,7 @@ public class SessionPersistence
 
         // Configure polymorphic serialization for ContentBlock hierarchy
         options.Converters.Add(new ContentBlockJsonConverterFactory());
-        
+
         return options;
     }
 
@@ -56,11 +56,11 @@ public class SessionPersistence
 
         string? line;
         var lineNumber = 0;
-        
+
         while ((line = await reader.ReadLineAsync(cancellationToken)) != null)
         {
             lineNumber++;
-            
+
             if (string.IsNullOrWhiteSpace(line))
             {
                 continue;
@@ -78,7 +78,7 @@ public class SessionPersistence
             {
                 // Log malformed JSON but continue processing other lines
                 OnDeserializationError(line, lineNumber, ex, filePath);
-                
+
                 // Continue processing the rest of the file
                 continue;
             }
@@ -104,7 +104,7 @@ public class SessionPersistence
     {
         // Use a keyed_semaphore for coordinating access to specific files across threads
         var semaphore = GetSemaphoreForFile(filePath);
-        
+
         await semaphore.WaitAsync(cancellationToken);
         try
         {
@@ -117,15 +117,15 @@ public class SessionPersistence
 
             // Use FileShare.None during write to prevent concurrent modifications
             using var fileStream = new FileStream(
-                filePath, 
-                FileMode.Create, 
-                FileAccess.Write, 
-                FileShare.None, 
-                bufferSize: 4096, 
+                filePath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 4096,
                 useAsync: true);
-            
+
             using var writer = new StreamWriter(fileStream);
-            
+
             foreach (var message in sessionStore.Messages)
             {
                 var jsonLine = JsonSerializer.Serialize(message, _jsonOptions);
@@ -149,7 +149,7 @@ public class SessionPersistence
     {
         // Use a keyed_semaphore for coordinating access to specific files across threads
         var semaphore = GetSemaphoreForFile(filePath);
-        
+
         await semaphore.WaitAsync(cancellationToken);
         try
         {
@@ -159,18 +159,18 @@ public class SessionPersistence
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             // Use append mode with FileShare.Read to allow concurrent reads
             using var fileStream = new FileStream(
-                filePath, 
-                FileMode.Append, 
-                FileAccess.Write, 
-                FileShare.Read, 
-                bufferSize: 4096, 
+                filePath,
+                FileMode.Append,
+                FileAccess.Write,
+                FileShare.Read,
+                bufferSize: 4096,
                 useAsync: true);
-            
+
             using var writer = new StreamWriter(fileStream);
-            
+
             var jsonLine = JsonSerializer.Serialize(message, _jsonOptions);
             await writer.WriteLineAsync(jsonLine);
             await writer.FlushAsync(); // Ensure data is written immediately
@@ -221,7 +221,7 @@ public class ContentBlockJsonConverterFactory : JsonConverterFactory
     {
         return new ContentBlockJsonConverter();
     }
-    
+
     private class ContentBlockJsonConverter : JsonConverter<ContentBlock>
     {
         public override ContentBlock? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

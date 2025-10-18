@@ -8,7 +8,7 @@ namespace CodeAgentDemo.Core;
 public class ToolRegistry
 {
     private readonly Dictionary<string, ITool> _tools = new();
-    
+
     /// <summary>
     /// Registers a tool.
     /// </summary>
@@ -16,15 +16,15 @@ public class ToolRegistry
     public void Register(ITool tool)
     {
         ArgumentNullException.ThrowIfNull(tool);
-        
+
         if (_tools.ContainsKey(tool.Name))
         {
             throw new ArgumentException($"Tool '{tool.Name}' is already registered.");
         }
-        
+
         _tools[tool.Name] = tool;
     }
-    
+
     /// <summary>
     /// Gets a tool by name.
     /// </summary>
@@ -33,7 +33,7 @@ public class ToolRegistry
     {
         return _tools.TryGetValue(name, out var tool) ? tool : null;
     }
-    
+
     /// <summary>
     /// Gets all registered tools.
     /// </summary>
@@ -41,12 +41,12 @@ public class ToolRegistry
     {
         return _tools.Values.ToList();
     }
-    
+
     /// <summary>
     /// Gets the number of registered tools.
     /// </summary>
     public int Count => _tools.Count;
-    
+
     /// <summary>
     /// Checks if a tool with the given name is registered.
     /// </summary>
