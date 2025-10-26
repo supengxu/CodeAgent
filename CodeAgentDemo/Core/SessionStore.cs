@@ -59,4 +59,14 @@ public partial class SessionStore
     {
         _messages = initialMessages ?? new List<ChatMessage>();
     }
+
+    /// <summary>
+    /// Replaces all messages with a new collection.
+    /// </summary>
+    public void ReplaceMessages(IEnumerable<ChatMessage> newMessages)
+    {
+        ArgumentNullException.ThrowIfNull(newMessages);
+        _messages.Clear();
+        _messages.AddRange(newMessages);
+    }
 }

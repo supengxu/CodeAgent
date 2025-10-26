@@ -130,34 +130,40 @@ public class AgentLoop : IAgentLoop
     private readonly SessionPersistence? _sessionPersistence;
     private readonly string? _sessionFilePath;
     private readonly SessionCli? _sessionCli;
+    private readonly IPlanningEngine? _planningEngine;
+    private readonly ILoopController? _loopController;
+    private readonly IReflectionEngine? _reflectionEngine;
+    private readonly IContextManager? _contextManager;
     private int _toolCallCount;
 
     public IReadOnlyList<ChatMessage> History => _sessionCli?.CurrentSession.Messages ?? _session!.Messages;
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options)
-        : this(provider, tools, options, new DefaultConsoleIO(), null, null, null)
+        : this(provider, tools, options, new DefaultConsoleIO(), null, null, null, null, null, null, null)
     {
     }
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
         Func<ToolCall, Task<bool>>? toolConfirmationHandler)
-        : this(provider, tools, options, new DefaultConsoleIO(), toolConfirmationHandler, null, null)
+        : this(provider, tools, options, new DefaultConsoleIO(), toolConfirmationHandler, null, null, null, null, null, null)
     {
     }
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, string? sessionFilePath = null)
-        : this(provider, tools, options, new DefaultConsoleIO(), null, sessionFilePath, null)
+        : this(provider, tools, options, new DefaultConsoleIO(), null, sessionFilePath, null, null, null, null, null)
     {
     }
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, SessionCli sessionCli)
-        : this(provider, tools, options, new DefaultConsoleIO(), null, null, sessionCli)
+        : this(provider, tools, options, new DefaultConsoleIO(), null, null, sessionCli, null, null, null, null)
     {
     }
 
     internal AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
         IConsoleIO console, Func<ToolCall, Task<bool>>? toolConfirmationHandler = null,
-        string? sessionFilePath = null, SessionCli? sessionCli = null)
+        string? sessionFilePath = null, SessionCli? sessionCli = null,
+        IPlanningEngine? planningEngine = null, ILoopController? loopController = null,
+        IReflectionEngine? reflectionEngine = null, IContextManager? contextManager = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
@@ -166,6 +172,10 @@ public class AgentLoop : IAgentLoop
         _toolConfirmationHandler = toolConfirmationHandler;
         _sessionFilePath = sessionFilePath;
         _sessionCli = sessionCli;
+        _planningEngine = planningEngine;
+        _loopController = loopController;
+        _reflectionEngine = reflectionEngine;
+        _contextManager = contextManager;
         _ui = new ConsoleUI();
         _toolCallCount = 0;
 
