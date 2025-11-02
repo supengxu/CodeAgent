@@ -86,7 +86,7 @@ public class XxxTool : ITool
 - [ ] XML 文档注释（public 方法/类）
 
 ### 3.2 校验要求
-- 所有修改必须通过 `.\.harness\Validate.ps1` 全量校验
+- 所有修改必须通过 `.\.harness\Validate.sh` 全量校验
 - 单元测试覆盖率 ≥ 80%
 - 禁止提交未通过校验的代码
 
@@ -96,7 +96,7 @@ public class XxxTool : ITool
 
 1. **每次编写/修改代码后**，必须运行校验脚本：
    ```powershell
-   .\.harness\Validate.ps1
+   .\.harness\Validate.sh
    ```
 
 2. **校验不通过时**，必须根据错误信息自行修复，直到全量通过
