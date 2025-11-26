@@ -121,47 +121,38 @@ public interface IAgentLoop
 public class AgentLoop : IAgentLoop
 {
     private readonly IChatProvider _provider;
-    private readonly SessionStore? _session;
     private readonly ToolRegistry _tools;
     private readonly ChatOptions _options;
     private readonly IConsoleIO _console;
+    private readonly SessionCli _sessionCli;
     private readonly ConsoleUI _ui;
-    private readonly Func<ToolCall, Task<bool>>? _toolConfirmationHandler;
-    private readonly SessionPersistence? _sessionPersistence;
-    private readonly string? _sessionFilePath;
-    private readonly SessionCli? _sessionCli;
     private readonly IPlanningEngine? _planningEngine;
     private readonly ILoopController? _loopController;
     private readonly IReflectionEngine? _reflectionEngine;
     private readonly IContextManager? _contextManager;
     private int _toolCallCount;
 
-    public IReadOnlyList<ChatMessage> History => _sessionCli?.CurrentSession.Messages ?? _session!.Messages;
-
-    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options)
-        : this(provider, tools, options, new DefaultConsoleIO(), null, null, null, null, null, null, null)
-    {
-    }
-
-    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
-        Func<ToolCall, Task<bool>>? toolConfirmationHandler)
-        : this(provider, tools, options, new DefaultConsoleIO(), toolConfirmationHandler, null, null, null, null, null, null)
-    {
-    }
-
-    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, string? sessionFilePath = null)
-        : this(provider, tools, options, new DefaultConsoleIO(), null, sessionFilePath, null, null, null, null, null)
-    {
-    }
+    public IReadOnlyList<ChatMessage> History => _sessionCli.CurrentSession.Messages;
 
     public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, SessionCli sessionCli)
-        : this(provider, tools, options, new DefaultConsoleIO(), null, null, sessionCli, null, null, null, null)
     {
+        _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _tools = tools ?? throw new ArgumentNullException(nameof(tools));
+        _options = options ?? new ChatOptions();
+        _console = new DefaultConsoleIO();
+        _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
+        _ui = new ConsoleUI();
+        _toolCallCount = 0;
+
+        sessionCli.InitializeAsync().GetAwaiter().GetResult();
+        if (sessionCli.CurrentSession.Count > 0)
+        {
+            _ui.DisplaySessionHistory(sessionCli.CurrentSession.Messages);
+        }
     }
 
     internal AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
-        IConsoleIO console, Func<ToolCall, Task<bool>>? toolConfirmationHandler = null,
-        string? sessionFilePath = null, SessionCli? sessionCli = null,
+        IConsoleIO console, SessionCli sessionCli,
         IPlanningEngine? planningEngine = null, ILoopController? loopController = null,
         IReflectionEngine? reflectionEngine = null, IContextManager? contextManager = null)
     {
@@ -169,9 +160,7 @@ public class AgentLoop : IAgentLoop
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
         _options = options ?? new ChatOptions();
         _console = console ?? new DefaultConsoleIO();
-        _toolConfirmationHandler = toolConfirmationHandler;
-        _sessionFilePath = sessionFilePath;
-        _sessionCli = sessionCli;
+        _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
         _planningEngine = planningEngine;
         _loopController = loopController;
         _reflectionEngine = reflectionEngine;
@@ -179,23 +168,10 @@ public class AgentLoop : IAgentLoop
         _ui = new ConsoleUI();
         _toolCallCount = 0;
 
-        if (sessionCli != null)
+        sessionCli.InitializeAsync().GetAwaiter().GetResult();
+        if (sessionCli.CurrentSession.Count > 0)
         {
-            sessionCli.InitializeAsync().GetAwaiter().GetResult();
-            _session = sessionCli.CurrentSession;
-        }
-        else
-        {
-            _session = new SessionStore();
-            if (_sessionFilePath != null)
-            {
-                _sessionPersistence = new SessionPersistence();
-                var loadedSession = _sessionPersistence.LoadSessionAsync(_sessionFilePath).GetAwaiter().GetResult();
-                foreach (var msg in loadedSession.Messages)
-                {
-                    _session.AddMessage(msg);
-                }
-            }
+            _ui.DisplaySessionHistory(sessionCli.CurrentSession.Messages);
         }
     }
 
@@ -210,19 +186,7 @@ public class AgentLoop : IAgentLoop
             throw new ArgumentException("Message cannot be empty", nameof(message));
 
         var userMessage = ChatMessage.CreateText(ChatRole.User, message);
-
-        if (_sessionCli != null)
-        {
-            await _sessionCli.AppendMessageAsync(userMessage);
-        }
-        else if (_session != null)
-        {
-            _session.AddMessage(userMessage);
-            if (_sessionPersistence != null && _sessionFilePath != null)
-            {
-                await _sessionPersistence.AppendToSessionAsync(userMessage, _sessionFilePath, cancellationToken);
-            }
-        }
+        await _sessionCli.AppendMessageAsync(userMessage);
 
         var startTime = DateTime.Now;
         var totalInputTokens = 0;
@@ -243,19 +207,7 @@ public class AgentLoop : IAgentLoop
             if (response.Content.Any())
             {
                 var assistantMessage = new ChatMessage(ChatRole.Assistant, response.Content);
-
-                if (_sessionCli != null)
-                {
-                    await _sessionCli.AppendMessageAsync(assistantMessage);
-                }
-                else if (_session != null)
-                {
-                    _session.AddMessage(assistantMessage);
-                    if (_sessionPersistence != null && _sessionFilePath != null)
-                    {
-                        await _sessionPersistence.AppendToSessionAsync(assistantMessage, _sessionFilePath, cancellationToken);
-                    }
-                }
+                await _sessionCli.AppendMessageAsync(assistantMessage);
             }
 
             if (response.StopReason == "tool_use" && response.ToolCalls.Count > 0)
@@ -269,18 +221,7 @@ public class AgentLoop : IAgentLoop
                         new ToolResultBlock(toolCall.Id, result.Output, !result.Success)
                     });
 
-                    if (_sessionCli != null)
-                    {
-                        await _sessionCli.AppendMessageAsync(toolResultMessage);
-                    }
-                    else if (_session != null)
-                    {
-                        _session.AddMessage(toolResultMessage);
-                        if (_sessionPersistence != null && _sessionFilePath != null)
-                        {
-                            await _sessionPersistence.AppendToSessionAsync(toolResultMessage, _sessionFilePath, cancellationToken);
-                        }
-                    }
+                    await _sessionCli.AppendMessageAsync(toolResultMessage);
                 }
                 continue;
             }
@@ -312,7 +253,7 @@ public class AgentLoop : IAgentLoop
                 break;
             }
 
-            if (_sessionCli != null && input.StartsWith("/"))
+            if (input.StartsWith("/"))
             {
                 var result = await _sessionCli.TryExecuteCommandAsync(input);
                 if (result.IsCommand)
@@ -346,29 +287,9 @@ public class AgentLoop : IAgentLoop
 
     private async Task SaveAndExitAsync(CancellationToken cancellationToken)
     {
-        if (_sessionCli != null)
-        {
-            await _sessionCli.SaveCurrentSessionAsync();
-            _console.WriteLine($"\nSession saved.");
-            _ui.PrintStats(_sessionCli.CurrentSession.Count, _toolCallCount);
-        }
-        else if (_sessionPersistence != null && _sessionFilePath != null && _session != null)
-        {
-            try
-            {
-                await _sessionPersistence.SaveSessionAsync(_session, _sessionFilePath, cancellationToken);
-                _console.WriteLine($"\nSession saved to {_sessionFilePath}");
-                _ui.PrintStats(_session.Messages.Count, _toolCallCount);
-            }
-            catch (Exception ex)
-            {
-                _ui.PrintError($"Failed to save session: {ex.Message}");
-            }
-        }
-        else if (_session != null)
-        {
-            _ui.PrintStats(_session.Messages.Count, _toolCallCount);
-        }
+        await _sessionCli.SaveCurrentSessionAsync();
+        _console.WriteLine($"\nSession saved.");
+        _ui.PrintStats(_sessionCli.CurrentSession.Count, _toolCallCount);
 
         _ui.PrintGoodbye();
     }
@@ -482,24 +403,17 @@ public class AgentLoop : IAgentLoop
         _ui.PrintToolCallStart(toolCall.Name, toolCall.Arguments.ToString());
 
         bool confirmed;
-        if (_toolConfirmationHandler != null)
+        if (tool.RequiresConfirmation(toolCall.Arguments))
         {
-            confirmed = await _toolConfirmationHandler(toolCall);
+            _ui.PrintToolConfirmation(toolCall.Name);
+            _console.Write("    执行? [y/N]: ");
+
+            var confirmation = _console.ReadLine();
+            confirmed = confirmation?.ToLower() == "y";
         }
         else
         {
-            if (!tool.RequiresConfirmation(toolCall.Arguments))
-            {
-                confirmed = true;
-            }
-            else
-            {
-                _ui.PrintToolConfirmation(toolCall.Name);
-                _console.Write("    执行? [y/N]: ");
-
-                var confirmation = _console.ReadLine();
-                confirmed = confirmation?.ToLower() == "y";
-            }
+            confirmed = true;
         }
 
         if (!confirmed)

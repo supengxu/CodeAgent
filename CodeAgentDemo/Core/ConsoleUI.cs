@@ -1,3 +1,5 @@
+using CodeAgentDemo.Models;
+
 namespace CodeAgentDemo.Core;
 
 /// <summary>
@@ -299,6 +301,63 @@ public class ConsoleUI
     public void PrintSeparator()
     {
         WriteColor("─".PadRight(60, '─'), ConsoleTheme.Dim);
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// 打印会话历史消息
+    /// </summary>
+    public void DisplaySessionHistory(IReadOnlyList<ChatMessage> messages)
+    {
+        PrintSeparator();
+        var blockCount = messages is ICollection<ChatMessage> coll ? coll.Count : messages.Count();
+        WriteColor($" Loading {blockCount} historical messages ", ConsoleTheme.Dim);
+        Console.WriteLine();
+        PrintSeparator();
+        Console.WriteLine();
+
+        foreach (var message in messages)
+        {
+            PrintMessageHeader(message);
+
+            foreach (var block in message.Content)
+            {
+                switch (block)
+                {
+                    case TextBlock textBlock:
+                        Console.WriteLine(textBlock.Text);
+                        break;
+                    case ThinkingBlock thinkingBlock:
+                        Console.WriteLine($"[Thinking: {TruncateText(thinkingBlock.Thinking, 100)}]");
+                        break;
+                    case ToolUseBlock toolUseBlock:
+                        Console.WriteLine($"[Tool Use: {toolUseBlock.Name}]");
+                        break;
+                    case ToolResultBlock toolResultBlock:
+                        Console.WriteLine($"[Tool Result: {TruncateText(toolResultBlock.Content, 100)}]");
+                        break;
+                }
+            }
+
+            Console.WriteLine();
+        }
+
+        PrintSeparator();
+    }
+
+    private void PrintMessageHeader(ChatMessage message)
+    {
+        var roleColor = message.Role switch
+        {
+            ChatRole.User => ConsoleTheme.UserInput,
+            ChatRole.Assistant => ConsoleTheme.Assistant,
+            ChatRole.Tool => ConsoleTheme.ToolResult,
+            _ => ConsoleTheme.Default
+        };
+
+        WriteColor($"┌─ {message.Role} ", ConsoleTheme.Accent);
+        var blockCount = message.Content is ICollection<ContentBlock> col ? col.Count : message.Content.Count();
+        WriteColor($"({blockCount} block(s))", roleColor);
         Console.WriteLine();
     }
 
