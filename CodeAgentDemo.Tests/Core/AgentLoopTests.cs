@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CodeAgentDemo.Core;
+using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;
@@ -11,14 +12,24 @@ namespace CodeAgentDemo.Tests.Core;
 
 public class AgentLoopTests
 {
+    private static IToolRegistry CreateToolRegistry() => new ToolRegistry();
+    private static IConsoleUI CreateConsoleUI() => new ConsoleUI();
+    private static ISessionCli CreateSessionCli(string sessionsDir)
+    {
+        var cli = new SessionCli(sessionsDir);
+        cli.InitializeAsync().GetAwaiter().GetResult();
+        return cli;
+    }
+
     [Fact]
     public void Constructor_WithNullProvider_ShouldThrowArgumentNullException()
     {
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
         var console = new Mock<IConsoleIO>().Object;
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        var act = () => new AgentLoop(null!, tools, options, console, null);
+        var act = () => new AgentLoop(null!, tools, options, CreateSessionCli(sessionsDir), CreateConsoleUI());
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("provider");
@@ -29,9 +40,9 @@ public class AgentLoopTests
     {
         var provider = new Mock<IChatProvider>().Object;
         var options = new ChatOptions();
-        var console = new Mock<IConsoleIO>().Object;
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        var act = () => new AgentLoop(provider, null!, options, console, null);
+        var act = () => new AgentLoop(provider, null!, options, CreateSessionCli(sessionsDir), CreateConsoleUI());
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("tools");
@@ -41,24 +52,10 @@ public class AgentLoopTests
     public void Constructor_WithNullOptions_ShouldUseDefaultOptions()
     {
         var provider = new Mock<IChatProvider>().Object;
-        var tools = new ToolRegistry();
-        var console = new Mock<IConsoleIO>().Object;
+        var tools = CreateToolRegistry();
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-        var loop = new AgentLoop(provider, tools, null!, console, null);
-
-        loop.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Constructor_WithToolConfirmationHandler_ShouldWork()
-    {
-        var provider = new Mock<IChatProvider>().Object;
-        var tools = new ToolRegistry();
-        var options = new ChatOptions();
-        var console = new Mock<IConsoleIO>().Object;
-        Func<ToolCall, Task<bool>> handler = _ => Task.FromResult(true);
-
-        var loop = new AgentLoop(provider, tools, options, console, handler);
+        var loop = new AgentLoop(provider, tools, null!, CreateSessionCli(sessionsDir), CreateConsoleUI());
 
         loop.Should().NotBeNull();
     }
@@ -68,10 +65,10 @@ public class AgentLoopTests
     {
         var providerMock = new Mock<IChatProvider>();
         providerMock.SetupGet(p => p.ProviderName).Returns("Test");
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
-        var console = new Mock<IConsoleIO>().Object;
-        var loop = new AgentLoop(providerMock.Object, tools, options, console, null);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var loop = new AgentLoop(providerMock.Object, tools, options, CreateSessionCli(sessionsDir), CreateConsoleUI());
 
         var act = async () => await loop.SendMessageAsync("");
         await act.Should().ThrowAsync<ArgumentException>();
@@ -87,10 +84,10 @@ public class AgentLoopTests
         providerMock.SetupGet(p => p.ProviderName).Returns("Test");
         var toolMock = new Mock<ITool>();
         toolMock.SetupGet(t => t.Name).Returns("test");
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
-        var console = new Mock<IConsoleIO>().Object;
-        var loop = new AgentLoop(providerMock.Object, tools, options, console, null);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var loop = new AgentLoop(providerMock.Object, tools, options, CreateSessionCli(sessionsDir), CreateConsoleUI());
 
         loop.RegisterTool(toolMock.Object);
 
@@ -102,10 +99,10 @@ public class AgentLoopTests
     {
         var providerMock = new Mock<IChatProvider>();
         providerMock.SetupGet(p => p.ProviderName).Returns("Test");
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
-        var console = new Mock<IConsoleIO>().Object;
-        var loop = new AgentLoop(providerMock.Object, tools, options, console, null);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var loop = new AgentLoop(providerMock.Object, tools, options, CreateSessionCli(sessionsDir), CreateConsoleUI());
 
         loop.History.Should().BeEmpty();
     }
@@ -118,9 +115,11 @@ public class AgentLoopTests
         var consoleMock = new Mock<IConsoleIO>();
         consoleMock.SetupSequence(c => c.ReadLine()).Returns("quit");
 
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
-        var loop = new AgentLoop(providerMock.Object, tools, options, consoleMock.Object, null);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var sessionCli = CreateSessionCli(sessionsDir);
+        var loop = new AgentLoop(providerMock.Object, tools, options, sessionCli, CreateConsoleUI(), consoleMock);
 
         await loop.RunAsync();
 
@@ -135,9 +134,11 @@ public class AgentLoopTests
         var consoleMock = new Mock<IConsoleIO>();
         consoleMock.SetupSequence(c => c.ReadLine()).Returns("exit");
 
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
-        var loop = new AgentLoop(providerMock.Object, tools, options, consoleMock.Object, null);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var sessionCli = CreateSessionCli(sessionsDir);
+        var loop = new AgentLoop(providerMock.Object, tools, options, sessionCli, CreateConsoleUI(), consoleMock);
 
         await loop.RunAsync();
 
@@ -155,9 +156,11 @@ public class AgentLoopTests
             .Returns("   ")
             .Returns("quit");
 
-        var tools = new ToolRegistry();
+        var tools = CreateToolRegistry();
         var options = new ChatOptions();
-        var loop = new AgentLoop(providerMock.Object, tools, options, consoleMock.Object, null);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var sessionCli = CreateSessionCli(sessionsDir);
+        var loop = new AgentLoop(providerMock.Object, tools, options, sessionCli, CreateConsoleUI(), consoleMock);
 
         await loop.RunAsync();
 

@@ -1,3 +1,4 @@
+using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Tools;
 
 namespace CodeAgentDemo.Core;
@@ -5,7 +6,7 @@ namespace CodeAgentDemo.Core;
 /// <summary>
 /// Registry for managing available tools.
 /// </summary>
-public class ToolRegistry
+public class ToolRegistry : IToolRegistry
 {
     private readonly Dictionary<string, ITool> _tools = new();
 

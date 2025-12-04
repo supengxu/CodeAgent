@@ -1,3 +1,4 @@
+using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 
 namespace CodeAgentDemo.Core;
@@ -23,7 +24,7 @@ public enum ConsoleTheme
 /// <summary>
 /// 统一的控制台 UI 管理器，提供美观的输出格式化
 /// </summary>
-public class ConsoleUI
+public class ConsoleUI : IConsoleUI
 {
     private bool _isThinkingStreaming;
     private bool _thinkingNeedsPrefix;

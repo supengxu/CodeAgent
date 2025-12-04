@@ -1,9 +1,10 @@
 using CodeAgentDemo.Core;
+using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 
 namespace CodeAgentDemo.Cli;
 
-public class SessionCli
+public class SessionCli : ISessionCli
 {
     private readonly SessionManager _sessionManager;
     private readonly SessionPersistence _persistence;

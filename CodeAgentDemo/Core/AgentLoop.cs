@@ -1,5 +1,6 @@
 using System.Text;
 using CodeAgentDemo.Cli;
+using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;
@@ -115,17 +116,18 @@ public interface IAgentLoop
 {
     IReadOnlyList<ChatMessage> History { get; }
     Task<AgentResponse> SendMessageAsync(string message, CancellationToken cancellationToken = default);
+    Task RunAsync(CancellationToken cancellationToken = default);
     void RegisterTool(ITool tool);
 }
 
 public class AgentLoop : IAgentLoop
 {
     private readonly IChatProvider _provider;
-    private readonly ToolRegistry _tools;
+    private readonly IToolRegistry _tools;
     private readonly ChatOptions _options;
     private readonly IConsoleIO _console;
-    private readonly SessionCli _sessionCli;
-    private readonly ConsoleUI _ui;
+    private readonly ISessionCli _sessionCli;
+    private readonly IConsoleUI _ui;
     private readonly IPlanningEngine? _planningEngine;
     private readonly ILoopController? _loopController;
     private readonly IReflectionEngine? _reflectionEngine;
@@ -134,14 +136,14 @@ public class AgentLoop : IAgentLoop
 
     public IReadOnlyList<ChatMessage> History => _sessionCli.CurrentSession.Messages;
 
-    public AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options, SessionCli sessionCli)
+    public AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options, ISessionCli sessionCli, IConsoleUI ui)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
         _options = options ?? new ChatOptions();
         _console = new DefaultConsoleIO();
         _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
-        _ui = new ConsoleUI();
+        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
         _toolCallCount = 0;
 
         sessionCli.InitializeAsync().GetAwaiter().GetResult();
@@ -151,10 +153,28 @@ public class AgentLoop : IAgentLoop
         }
     }
 
-    internal AgentLoop(IChatProvider provider, ToolRegistry tools, ChatOptions options,
-        IConsoleIO console, SessionCli sessionCli,
-        IPlanningEngine? planningEngine = null, ILoopController? loopController = null,
-        IReflectionEngine? reflectionEngine = null, IContextManager? contextManager = null)
+    internal AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options,
+        IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui)
+    {
+        _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        _tools = tools ?? throw new ArgumentNullException(nameof(tools));
+        _options = options ?? new ChatOptions();
+        _console = console ?? new DefaultConsoleIO();
+        _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
+        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
+        _toolCallCount = 0;
+
+        sessionCli.InitializeAsync().GetAwaiter().GetResult();
+        if (sessionCli.CurrentSession.Count > 0)
+        {
+            _ui.DisplaySessionHistory(sessionCli.CurrentSession.Messages);
+        }
+    }
+
+    internal AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options,
+        IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui,
+        IPlanningEngine? planningEngine, ILoopController? loopController,
+        IReflectionEngine? reflectionEngine, IContextManager? contextManager)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
@@ -165,7 +185,7 @@ public class AgentLoop : IAgentLoop
         _loopController = loopController;
         _reflectionEngine = reflectionEngine;
         _contextManager = contextManager;
-        _ui = new ConsoleUI();
+        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
         _toolCallCount = 0;
 
         sessionCli.InitializeAsync().GetAwaiter().GetResult();
