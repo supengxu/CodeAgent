@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
@@ -21,6 +22,7 @@ public class ReflectionEngineIntegrationTests
     private readonly Mock<IConsoleIO> _consoleMock;
     private readonly ToolRegistry _tools;
     private readonly ReflectionConfig _reflectionConfig;
+    private readonly SessionCli _sessionCli;
 
     public ReflectionEngineIntegrationTests()
     {
@@ -28,6 +30,7 @@ public class ReflectionEngineIntegrationTests
         _consoleMock = new Mock<IConsoleIO>();
         _tools = new ToolRegistry();
         _reflectionConfig = new ReflectionConfig();
+        _sessionCli = new SessionCli(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
     }
 
     #region Tool Failure Triggers Reflection Tests
@@ -438,9 +441,8 @@ public class ReflectionEngineIntegrationTests
             _tools,
             options,
             _consoleMock.Object,
-            null, // toolConfirmationHandler
-            null, // sessionFilePath
-            null, // sessionCli
+            _sessionCli,
+            new ConsoleUI(),
             null, // planningEngine
             null, // loopController
             reflectionEngine,

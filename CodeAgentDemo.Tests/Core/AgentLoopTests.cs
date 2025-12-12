@@ -1,6 +1,6 @@
 using System.Text.Json;
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
-using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;
@@ -119,7 +119,7 @@ public class AgentLoopTests
         var options = new ChatOptions();
         var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var sessionCli = CreateSessionCli(sessionsDir);
-        var loop = new AgentLoop(providerMock.Object, tools, options, sessionCli, CreateConsoleUI(), consoleMock);
+        var loop = new AgentLoop(providerMock.Object, tools, options, consoleMock.Object, sessionCli, CreateConsoleUI());
 
         await loop.RunAsync();
 
@@ -138,7 +138,7 @@ public class AgentLoopTests
         var options = new ChatOptions();
         var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var sessionCli = CreateSessionCli(sessionsDir);
-        var loop = new AgentLoop(providerMock.Object, tools, options, sessionCli, CreateConsoleUI(), consoleMock);
+        var loop = new AgentLoop(providerMock.Object, tools, options, consoleMock.Object, sessionCli, CreateConsoleUI());
 
         await loop.RunAsync();
 
@@ -160,7 +160,7 @@ public class AgentLoopTests
         var options = new ChatOptions();
         var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var sessionCli = CreateSessionCli(sessionsDir);
-        var loop = new AgentLoop(providerMock.Object, tools, options, sessionCli, CreateConsoleUI(), consoleMock);
+        var loop = new AgentLoop(providerMock.Object, tools, options, consoleMock.Object, sessionCli, CreateConsoleUI());
 
         await loop.RunAsync();
 

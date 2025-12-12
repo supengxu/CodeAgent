@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
@@ -290,11 +291,12 @@ public class ContextManagerIntegrationTests
         var tools = new ToolRegistry();
         var options = new ChatOptions();
         var consoleMock = new Mock<IConsoleIO>();
+        var sessionCli = new SessionCli(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
 
         // Act
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, null, null, contextManager);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, null, null, contextManager);
 
         // Send multiple messages to build up context
         for (int i = 0; i < 10; i++)
@@ -337,11 +339,12 @@ public class ContextManagerIntegrationTests
         var tools = new ToolRegistry();
         var options = new ChatOptions();
         var consoleMock = new Mock<IConsoleIO>();
+        var sessionCli = new SessionCli(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
 
         // Act
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, null, null, contextManager);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, null, null, contextManager);
 
         // Send messages
         await loop.SendMessageAsync("First message");
@@ -403,10 +406,12 @@ public class ContextManagerIntegrationTests
                 }.ToAsyncEnumerable();
             });
 
+        var sessionCli = new SessionCli(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+
         // Act
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, null, null, contextManager);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, null, null, contextManager);
 
         var result = await loop.SendMessageAsync("Use the tool");
 

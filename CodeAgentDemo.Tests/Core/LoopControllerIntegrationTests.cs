@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
@@ -32,9 +33,12 @@ public class LoopControllerIntegrationTests
         var config = new LoopControlConfig { MaxIterations = 15, CycleDetectionWindow = 100 };
         var loopController = new LoopController(config);
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Test message");
@@ -58,9 +62,12 @@ public class LoopControllerIntegrationTests
         var config = new LoopControlConfig { MaxIterations = 3, CycleDetectionWindow = 100 };
         var loopController = new LoopController(config);
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Test message");
@@ -111,9 +118,12 @@ public class LoopControllerIntegrationTests
                 }.ToAsyncEnumerable();
             });
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Test message");
@@ -167,9 +177,12 @@ public class LoopControllerIntegrationTests
                 }.ToAsyncEnumerable();
             });
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Test message");
@@ -221,9 +234,12 @@ public class LoopControllerIntegrationTests
                 }.ToAsyncEnumerable();
             });
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Test message");
@@ -278,9 +294,12 @@ public class LoopControllerIntegrationTests
                 }.ToAsyncEnumerable();
             });
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Test message");
@@ -314,10 +333,13 @@ public class LoopControllerIntegrationTests
         var options = new ChatOptions();
         var consoleMock = new Mock<IConsoleIO>();
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         // Create AgentLoop without LoopController
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, null, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, null, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Hello");
@@ -356,9 +378,12 @@ public class LoopControllerIntegrationTests
         };
         var loopController = new LoopController(config, 100000);
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Hello");
@@ -415,9 +440,12 @@ public class LoopControllerIntegrationTests
                 }.ToAsyncEnumerable();
             });
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act
         var result = await loop.SendMessageAsync("Do something");
@@ -457,9 +485,12 @@ public class LoopControllerIntegrationTests
         var config = new LoopControlConfig { MaxIterations = 5 };
         var loopController = new LoopController(config);
 
+        var sessionsDir = Path.Combine(Path.GetTempPath(), $"test_sessions_{Guid.NewGuid()}");
+        var sessionCli = new SessionCli(sessionsDir);
+
         var loop = new AgentLoop(
-            providerMock.Object, tools, options, consoleMock.Object,
-            null, null, null, null, loopController, null, null);
+            providerMock.Object, tools, options, consoleMock.Object, sessionCli,
+            new ConsoleUI(), null, loopController, null, null);
 
         // Act - First message
         await loop.SendMessageAsync("First message");

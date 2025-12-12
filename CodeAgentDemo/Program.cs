@@ -1,6 +1,5 @@
 using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
-using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;

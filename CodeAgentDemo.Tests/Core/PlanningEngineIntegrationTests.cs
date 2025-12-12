@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
@@ -19,6 +20,7 @@ public class PlanningEngineIntegrationTests
     private readonly Mock<IChatProvider> _chatProviderMock;
     private readonly PlanningConfig _config;
     private readonly PlanningEngine _planningEngine;
+    private readonly string _testSessionsDir;
 
     public PlanningEngineIntegrationTests()
     {
@@ -30,6 +32,7 @@ public class PlanningEngineIntegrationTests
             MinToolCallsForComplex = 3
         };
         _planningEngine = new PlanningEngine(_chatProviderMock.Object, _config);
+        _testSessionsDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
     }
 
     #region Fast-Path Tests (Simple Tasks Skip Planning)
@@ -45,9 +48,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("I'm doing well, thank you!");
 
         // Act - Create AgentLoop with PlanningEngine
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         var result = await loop.SendMessageAsync(simpleTask);
 
@@ -73,9 +77,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("Done");
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         await loop.SendMessageAsync(shortTask);
 
@@ -104,9 +109,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("Task completed successfully");
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         var result = await loop.SendMessageAsync(complexTask);
 
@@ -129,9 +135,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("Processed");
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         await loop.SendMessageAsync(longTask);
 
@@ -214,9 +221,10 @@ public class PlanningEngineIntegrationTests
             });
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         var result = await loop.SendMessageAsync(complexTask);
 
@@ -278,9 +286,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("Executed anyway");
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         var result = await loop.SendMessageAsync(task);
 
@@ -307,9 +316,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("Summary report created with 5 TODO items found.");
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         var result = await loop.SendMessageAsync(complexTask);
 
@@ -345,9 +355,10 @@ public class PlanningEngineIntegrationTests
         SetupProviderResponse("Here is the file content:");
 
         // Act
+        var sessionCli = new SessionCli(_testSessionsDir);
         var loop = new AgentLoop(
             _chatProviderMock.Object, tools, new ChatOptions(),
-            consoleMock.Object, null, null, null, _planningEngine);
+            consoleMock.Object, sessionCli, new ConsoleUI(), _planningEngine, null, null, null);
 
         // This task has 2 tool keywords (read, show), below threshold of 3
         var complexity = await _planningEngine.AssessComplexityAsync(task);

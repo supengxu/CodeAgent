@@ -1,5 +1,4 @@
 using CodeAgentDemo.Core;
-using CodeAgentDemo.Interfaces;
 using CodeAgentDemo.Models;
 
 namespace CodeAgentDemo.Cli;

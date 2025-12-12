@@ -1,10 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using CodeAgentDemo.Cli;
 using CodeAgentDemo.Core;
 using CodeAgentDemo.Models;
 
-namespace CodeAgentDemo.Interfaces;
+namespace CodeAgentDemo.Cli;
 
 /// <summary>
 /// 会话 CLI 接口

@@ -1,6 +1,6 @@
 using CodeAgentDemo.Models;
 
-namespace CodeAgentDemo.Interfaces;
+namespace CodeAgentDemo.Core;
 
 /// <summary>
 /// 控制台 UI 管理器接口
