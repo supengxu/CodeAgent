@@ -11,12 +11,18 @@ public class OpenAIProvider : IChatProvider
     private readonly IOpenAIConverter _converter;
 
     public OpenAIProvider(
-        string apiKey,
-        string model,
-        string? endpoint = null,
-        bool enableThinking = false,
-        IOpenAIConverter? converter = null)
+        ChatOptions chatOptions,
+        IOpenAIConverter converter)
     {
+        ArgumentNullException.ThrowIfNull(chatOptions);
+        ArgumentNullException.ThrowIfNull(converter);
+
+        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+            ?? throw new InvalidOperationException("OPENAI_API_KEY environment variable is required");
+
+        var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o";
+        var endpoint = Environment.GetEnvironmentVariable("OPENAI_API_URL");
+
         _model = model;
         var options = new OpenAI.OpenAIClientOptions();
 
@@ -27,7 +33,7 @@ public class OpenAIProvider : IChatProvider
 
         var openAIClient = new OpenAI.OpenAIClient(new System.ClientModel.ApiKeyCredential(apiKey), options);
         _client = openAIClient.GetChatClient(model);
-        _converter = converter ?? new OpenAIConverter(enableThinking);
+        _converter = converter;
     }
 
     public string ProviderName => "OpenAI";

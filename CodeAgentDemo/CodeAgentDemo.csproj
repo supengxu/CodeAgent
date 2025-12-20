@@ -21,6 +21,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
 		<PackageReference Include="OpenAI" Version="2.1.0" />
 		<PackageReference Include="DotNetEnv" Version="3.0.0" />
 		<!-- Harness 硬约束：代码质量分析 -->

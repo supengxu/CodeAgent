@@ -8,9 +8,9 @@ public class OpenAIConverter : IOpenAIConverter
 {
     private readonly bool _enableThinking;
 
-    public OpenAIConverter(bool enableThinking = false)
+    public OpenAIConverter(ChatOptions options)
     {
-        _enableThinking = enableThinking;
+        _enableThinking = options?.EnableThinking ?? false;
     }
     public List<OpenAI.Chat.ChatMessage> ToOpenAIMessages(IEnumerable<ChatMessage> messages, string? systemPrompt)
     {

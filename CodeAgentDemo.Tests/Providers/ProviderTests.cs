@@ -2,8 +2,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
+using CodeAgentDemo.Services;
 using DotNetEnv;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace CodeAgentDemo.Tests.Providers;
@@ -19,13 +21,13 @@ public class OpenAIProviderTests : IAsyncLifetime
 
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         _hasApiKey = !string.IsNullOrEmpty(apiKey);
-        var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4";
-        var endpoint = Environment.GetEnvironmentVariable("OPENAI_API_URL");
-        var enableThinking = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var et) && et;
 
         if (_hasApiKey)
         {
-            _provider = new OpenAIProvider(apiKey!, model, endpoint, enableThinking);
+            var enableThinking = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var et) && et;
+            var options = new ChatOptions { EnableThinking = enableThinking };
+            var converter = new OpenAIConverter(options);
+            _provider = new OpenAIProvider(options, converter);
         }
     }
 
@@ -35,14 +37,14 @@ public class OpenAIProviderTests : IAsyncLifetime
     [Fact]
     public void ProviderName_ShouldBeOpenAI()
     {
-        if (!_hasApiKey) return; // Skip if no API key
+        if (!_hasApiKey) return;
         _provider!.ProviderName.Should().Be("OpenAI");
     }
 
     [Fact]
     public async Task CompleteStreamingAsync_ShouldYieldChunks()
     {
-        if (!_hasApiKey) return; // Skip if no API key
+        if (!_hasApiKey) return;
 
         var messages = new[]
         {
@@ -59,27 +61,44 @@ public class OpenAIProviderTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Constructor_WithCustomEndpoint_ShouldNotThrow()
+    public void Constructor_WithNullOptions_ShouldThrowArgumentNullException()
     {
-        var act = () => new OpenAIProvider("test-key", "gpt-4", "https://custom.api/v1");
+        var converter = new Mock<IOpenAIConverter>().Object;
+        var act = () => new OpenAIProvider(null!, converter);
 
-        act.Should().NotThrow();
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("chatOptions");
     }
 
     [Fact]
-    public void Constructor_WithNullEndpoint_ShouldNotThrow()
+    public void Constructor_WithNullConverter_ShouldThrowArgumentNullException()
     {
-        var act = () => new OpenAIProvider("test-key", "gpt-4", null);
+        var options = new ChatOptions();
+        var act = () => new OpenAIProvider(options, null!);
 
-        act.Should().NotThrow();
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("converter");
     }
 
     [Fact]
-    public void Constructor_WithThinkingEnabled_ShouldNotThrow()
+    public void Constructor_WithoutApiKey_ShouldThrowInvalidOperationException()
     {
-        var act = () => new OpenAIProvider("test-key", "gpt-4", null, true);
+        var originalKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        Environment.SetEnvironmentVariable("OPENAI_API_KEY", null);
 
-        act.Should().NotThrow();
+        try
+        {
+            var options = new ChatOptions();
+            var converter = new Mock<IOpenAIConverter>().Object;
+            var act = () => new OpenAIProvider(options, converter);
+
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*OPENAI_API_KEY*");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", originalKey);
+        }
     }
 }
 
