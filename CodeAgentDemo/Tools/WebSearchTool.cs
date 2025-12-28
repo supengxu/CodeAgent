@@ -29,7 +29,7 @@ public class WebSearchTool : ITool
         "- 支持可配置的结果数量，返回最相关网站的内容\n" +
         "- 用于获取知识截止日期之后的信息\n" +
         "- 搜索在单次 API 调用中自动完成\n\n" +
-        $"当前年份是 {DateTime.Now.Year}。搜索近期信息或时事时必须使用此年份。";
+        $"当前日期是 {DateTime.Now}。搜索近期信息或时事时必须使用此日期。";
 
     public JsonElement InputSchema => JsonDocument.Parse("""
     {
