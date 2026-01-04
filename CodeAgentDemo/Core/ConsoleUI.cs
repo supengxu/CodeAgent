@@ -410,6 +410,17 @@ public class ConsoleUI : IConsoleUI
     }
 
     /// <summary>
+    /// 打印信息消息
+    /// </summary>
+    public void PrintInfo(string message)
+    {
+        Console.WriteLine();
+        WriteColor("ℹ️  ", ConsoleTheme.ToolCall);
+        WriteColor(message, ConsoleTheme.Dim);
+        Console.WriteLine();
+    }
+
+    /// <summary>
     /// 带颜色输出
     /// </summary>
     private static void WriteColor(string text, ConsoleTheme theme)
