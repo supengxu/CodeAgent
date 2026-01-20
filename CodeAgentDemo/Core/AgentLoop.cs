@@ -61,11 +61,11 @@ public class AgentLoop : IAgentLoop
         _options = options ?? new ChatOptions();
         _console = console ?? throw new ArgumentNullException(nameof(console));
         _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
+        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
         _planningEngine = planningEngine;
         _loopController = loopController;
         _reflectionEngine = reflectionEngine;
         _contextManager = contextManager;
-        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
         _toolCallCount = 0;
 
         sessionCli.InitializeAsync().GetAwaiter().GetResult();
@@ -92,9 +92,23 @@ public class AgentLoop : IAgentLoop
         var totalInputTokens = 0;
         var totalOutputTokens = 0;
 
+        _loopController?.Reset();
+        var plan = await TryGeneratePlanAsync(message, cancellationToken);
+
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (_loopController != null)
+            {
+                var canContinue = await _loopController.CheckIterationAsync(cancellationToken);
+                if (!canContinue)
+                {
+                    return new AgentResponse(Array.Empty<ContentBlock>(), DetermineLoopStopReason());
+                }
+            }
+
+            await TryCompressContextAsync(cancellationToken);
 
             var response = await CollectStreamingResponseAsync(cancellationToken);
 
@@ -102,6 +116,7 @@ public class AgentLoop : IAgentLoop
             {
                 totalInputTokens += response.Usage.InputTokens;
                 totalOutputTokens += response.Usage.OutputTokens;
+                _loopController?.UpdateTokenUsage(totalInputTokens + totalOutputTokens);
             }
 
             if (response.Content.Any())
@@ -112,9 +127,20 @@ public class AgentLoop : IAgentLoop
 
             if (response.StopReason == "tool_use" && response.ToolCalls.Count > 0)
             {
+                if (_loopController != null)
+                {
+                    var stateHash = _loopController.GetStateHash(
+                        string.Join(",", response.ToolCalls.Select(t => $"{t.Name}:{t.Arguments}")));
+                    if (_loopController.DetectCycle(stateHash))
+                    {
+                        _ui.PrintWarning("检测到循环行为，停止执行");
+                        return new AgentResponse(Array.Empty<ContentBlock>(), "cycle_detected");
+                    }
+                }
+
                 foreach (var toolCall in response.ToolCalls)
                 {
-                    var result = await ExecuteToolAsync(toolCall, cancellationToken);
+                    var result = await ExecuteToolWithReflectionAsync(toolCall, cancellationToken);
 
                     var toolResultMessage = new ChatMessage(ChatRole.Tool, new[]
                     {
@@ -123,6 +149,8 @@ public class AgentLoop : IAgentLoop
 
                     await _sessionCli.AppendMessageAsync(toolResultMessage);
                 }
+
+                if (plan != null) plan.AdvanceStep();
                 continue;
             }
 
@@ -192,6 +220,148 @@ public class AgentLoop : IAgentLoop
         _ui.PrintStats(_sessionCli.CurrentSession.Count, _toolCallCount);
 
         _ui.PrintGoodbye();
+    }
+
+    private async Task<TaskPlan?> TryGeneratePlanAsync(string message, CancellationToken cancellationToken)
+    {
+        if (_planningEngine == null) return null;
+
+        try
+        {
+            var complexity = await _planningEngine.AssessComplexityAsync(message, cancellationToken);
+
+            if (complexity == ComplexityLevel.Complex)
+            {
+                _ui.PrintInfo("检测到复杂任务，正在生成执行计划...");
+                var plan = await _planningEngine.GeneratePlanAsync(message, cancellationToken);
+
+                if (plan.Steps.Count > 0)
+                {
+                    _ui.PrintInfo($"计划生成完成，共 {plan.Steps.Count} 个步骤");
+                    for (int i = 0; i < plan.Steps.Count; i++)
+                    {
+                        _ui.PrintInfo($"  {i + 1}. {plan.Steps[i]}");
+                    }
+                }
+
+                return plan;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _ui.PrintWarning($"规划失败: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    private async Task TryCompressContextAsync(CancellationToken cancellationToken)
+    {
+        if (_contextManager == null) return;
+
+        try
+        {
+            if (_contextManager.ShouldCompress(History))
+            {
+                _ui.PrintInfo("上下文过长，正在压缩...");
+                var result = await _contextManager.CompressAsync(History, cancellationToken);
+
+                if (result.Success && result.RemovedTokens > 0)
+                {
+                    _ui.PrintInfo($"上下文压缩完成，移除 {result.RemovedTokens} tokens");
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _ui.PrintWarning($"上下文压缩失败: {ex.Message}");
+        }
+    }
+
+    private async Task<ToolResult> ExecuteToolWithReflectionAsync(ToolCall toolCall, CancellationToken cancellationToken)
+    {
+        var attemptCount = 1;
+        const int maxReflectionAttempts = 3;
+
+        while (true)
+        {
+            var result = await ExecuteToolAsync(toolCall, cancellationToken);
+
+            if (result.Success) return result;
+
+            if (_reflectionEngine == null) return result;
+
+            var shouldReflect = await _reflectionEngine.ShouldReflectAsync(result, attemptCount, cancellationToken);
+            if (!shouldReflect) return result;
+
+            _ui.PrintInfo($"工具执行失败 (尝试 {attemptCount})，正在反思...");
+
+            var reflectionContext = new ReflectionContext
+            {
+                ToolName = toolCall.Name,
+                Arguments = toolCall.Arguments,
+                ErrorMessage = result.Output,
+                AttemptNumber = attemptCount
+            };
+
+            var reflectionResult = await _reflectionEngine.ReflectAsync(reflectionContext, cancellationToken);
+
+            _ui.PrintInfo($"反思分析: {reflectionResult.Analysis}");
+            if (reflectionResult.Suggestions.Count > 0)
+            {
+                _ui.PrintInfo("建议:");
+                foreach (var suggestion in reflectionResult.Suggestions)
+                {
+                    _ui.PrintInfo($"  - {suggestion}");
+                }
+            }
+
+            if (!reflectionResult.ShouldRetry) return result;
+
+            attemptCount++;
+            if (attemptCount > maxReflectionAttempts)
+            {
+                _ui.PrintWarning("已达到最大重试次数");
+                return result;
+            }
+
+            _ui.PrintInfo("正在重试...");
+        }
+    }
+
+    private string DetermineLoopStopReason()
+    {
+        if (_loopController == null) return "end_turn";
+
+        var state = _loopController.State;
+
+        if (state.IterationLimitReached)
+        {
+            _ui.PrintWarning("已达到最大迭代次数限制");
+            return "iteration_limit";
+        }
+
+        if (state.TokenLimitReached)
+        {
+            _ui.PrintWarning("已达到 token 使用限制");
+            return "token_limit";
+        }
+
+        if (state.DetectedCycle)
+        {
+            _ui.PrintWarning("检测到循环行为");
+            return "cycle_detected";
+        }
+
+        return "loop_control_stop";
     }
 
     private async Task<StreamResponse> CollectStreamingResponseAsync(CancellationToken cancellationToken)

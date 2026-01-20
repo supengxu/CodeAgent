@@ -44,7 +44,7 @@ public class LoopControllerIntegrationTests
         var result = await loop.SendMessageAsync("Test message");
 
         // Assert
-        result.StopReason.Should().Be("loop_control_stop");
+        result.StopReason.Should().Be("iteration_limit");
         loopController.State.IterationLimitReached.Should().BeTrue();
         loopController.State.IterationCount.Should().Be(15);
     }
@@ -73,7 +73,7 @@ public class LoopControllerIntegrationTests
         var result = await loop.SendMessageAsync("Test message");
 
         // Assert
-        result.StopReason.Should().Be("loop_control_stop");
+        result.StopReason.Should().Be("iteration_limit");
         loopController.State.IterationLimitReached.Should().BeTrue();
         loopController.State.IterationCount.Should().Be(3);
     }
@@ -245,7 +245,7 @@ public class LoopControllerIntegrationTests
         var result = await loop.SendMessageAsync("Test message");
 
         // Assert
-        result.StopReason.Should().Be("loop_control_stop");
+        result.StopReason.Should().Be("token_limit");
         loopController.State.TokenLimitReached.Should().BeTrue();
     }
 

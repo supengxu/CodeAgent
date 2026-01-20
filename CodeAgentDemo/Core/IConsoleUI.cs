@@ -96,4 +96,9 @@ public interface IConsoleUI
     /// 打印退出消息
     /// </summary>
     void PrintGoodbye();
+
+    /// <summary>
+    /// 打印信息消息
+    /// </summary>
+    void PrintInfo(string message);
 }
