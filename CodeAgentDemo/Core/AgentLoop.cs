@@ -92,28 +92,22 @@ public class AgentLoop : IAgentLoop
         var totalInputTokens = 0;
         var totalOutputTokens = 0;
 
-        // Reset loop controller for new message
         _loopController?.Reset();
-
-        // Planning phase: assess complexity and potentially generate plan
         var plan = await TryGeneratePlanAsync(message, cancellationToken);
 
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Loop control: check if iteration is allowed
             if (_loopController != null)
             {
                 var canContinue = await _loopController.CheckIterationAsync(cancellationToken);
                 if (!canContinue)
                 {
-                    var stopReason = DetermineLoopStopReason();
-                    return new AgentResponse(Array.Empty<ContentBlock>(), stopReason);
+                    return new AgentResponse(Array.Empty<ContentBlock>(), DetermineLoopStopReason());
                 }
             }
 
-            // Context compression: check and compress if needed
             await TryCompressContextAsync(cancellationToken);
 
             var response = await CollectStreamingResponseAsync(cancellationToken);
@@ -122,8 +116,6 @@ public class AgentLoop : IAgentLoop
             {
                 totalInputTokens += response.Usage.InputTokens;
                 totalOutputTokens += response.Usage.OutputTokens;
-
-                // Update loop controller with token usage
                 _loopController?.UpdateTokenUsage(totalInputTokens + totalOutputTokens);
             }
 
@@ -158,12 +150,7 @@ public class AgentLoop : IAgentLoop
                     await _sessionCli.AppendMessageAsync(toolResultMessage);
                 }
 
-                // Advance plan step if all tools succeeded
-                if (plan != null && response.ToolCalls.All(tc => true))
-                {
-                    plan.AdvanceStep();
-                }
-
+                if (plan != null) plan.AdvanceStep();
                 continue;
             }
 
@@ -235,15 +222,9 @@ public class AgentLoop : IAgentLoop
         _ui.PrintGoodbye();
     }
 
-    /// <summary>
-    /// Tries to generate a plan for complex tasks.
-    /// </summary>
     private async Task<TaskPlan?> TryGeneratePlanAsync(string message, CancellationToken cancellationToken)
     {
-        if (_planningEngine == null)
-        {
-            return null;
-        }
+        if (_planningEngine == null) return null;
 
         try
         {
@@ -278,15 +259,9 @@ public class AgentLoop : IAgentLoop
         return null;
     }
 
-    /// <summary>
-    /// Tries to compress context if needed.
-    /// </summary>
     private async Task TryCompressContextAsync(CancellationToken cancellationToken)
     {
-        if (_contextManager == null)
-        {
-            return;
-        }
+        if (_contextManager == null) return;
 
         try
         {
@@ -298,9 +273,6 @@ public class AgentLoop : IAgentLoop
                 if (result.Success && result.RemovedTokens > 0)
                 {
                     _ui.PrintInfo($"上下文压缩完成，移除 {result.RemovedTokens} tokens");
-
-                    // Note: In a real implementation, we would need to update the session
-                    // with the compressed messages. For now, we just log the compression.
                 }
             }
         }
@@ -314,9 +286,6 @@ public class AgentLoop : IAgentLoop
         }
     }
 
-    /// <summary>
-    /// Executes a tool with reflection on failure.
-    /// </summary>
     private async Task<ToolResult> ExecuteToolWithReflectionAsync(ToolCall toolCall, CancellationToken cancellationToken)
     {
         var attemptCount = 1;
@@ -326,24 +295,13 @@ public class AgentLoop : IAgentLoop
         {
             var result = await ExecuteToolAsync(toolCall, cancellationToken);
 
-            if (result.Success)
-            {
-                return result;
-            }
+            if (result.Success) return result;
 
-            // Check if reflection should be triggered
-            if (_reflectionEngine == null)
-            {
-                return result;
-            }
+            if (_reflectionEngine == null) return result;
 
             var shouldReflect = await _reflectionEngine.ShouldReflectAsync(result, attemptCount, cancellationToken);
-            if (!shouldReflect)
-            {
-                return result;
-            }
+            if (!shouldReflect) return result;
 
-            // Perform reflection
             _ui.PrintInfo($"工具执行失败 (尝试 {attemptCount})，正在反思...");
 
             var reflectionContext = new ReflectionContext
@@ -366,10 +324,7 @@ public class AgentLoop : IAgentLoop
                 }
             }
 
-            if (!reflectionResult.ShouldRetry)
-            {
-                return result;
-            }
+            if (!reflectionResult.ShouldRetry) return result;
 
             attemptCount++;
             if (attemptCount > maxReflectionAttempts)
@@ -382,15 +337,9 @@ public class AgentLoop : IAgentLoop
         }
     }
 
-    /// <summary>
-    /// Determines the stop reason when loop controller stops the loop.
-    /// </summary>
     private string DetermineLoopStopReason()
     {
-        if (_loopController == null)
-        {
-            return "end_turn";
-        }
+        if (_loopController == null) return "end_turn";
 
         var state = _loopController.State;
 
