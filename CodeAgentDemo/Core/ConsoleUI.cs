@@ -136,6 +136,10 @@ public class ConsoleUI : IConsoleUI
     {
         _isThinkingStreaming = false;
         _thinkingNeedsPrefix = true;
+
+        // 清除"正在思考"提示（2行：空行 + 文字）
+        Console.Write("\x1b[2A");  // 上移2行
+        Console.Write("\x1b[J");   // 清除从光标到屏幕底部
     }
 
     public void EndStream()
@@ -417,6 +421,13 @@ public class ConsoleUI : IConsoleUI
         Console.WriteLine();
         WriteColor("ℹ️  ", ConsoleTheme.ToolCall);
         WriteColor(message, ConsoleTheme.Dim);
+        Console.WriteLine();
+    }
+
+    public void PrintThinking()
+    {
+        Console.WriteLine();
+        WriteColor("🤔 正在思考...", ConsoleTheme.Dim);
         Console.WriteLine();
     }
 

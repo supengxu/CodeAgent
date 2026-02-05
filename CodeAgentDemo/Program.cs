@@ -43,8 +43,9 @@ try
     services.AddSingleton<IChatProvider, OpenAIProvider>();
     services.AddSingleton<IToolRegistry, ToolRegistry>();
     services.AddSingleton<ISessionCli>(sp => new SessionCli(sessionsDir));
-    services.AddSingleton<IConsoleUI, ConsoleUI>();
-    services.AddSingleton<IConsoleIO, DefaultConsoleIO>();
+    services.AddSingleton<IConsoleUI, SpectreConsoleUI>();
+    services.AddSingleton<ILayoutRenderer, SplitLayoutRenderer>();
+    services.AddSingleton<IConsoleIO, SpectreConsoleIO>();
     services.AddSingleton<IAgentLoop, AgentLoop>();
 
     services.AddHttpClient("WebSearch");

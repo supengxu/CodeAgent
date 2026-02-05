@@ -87,7 +87,7 @@ public class SessionCli : ISessionCli
         await CreateNewSessionAsync(sessionName);
 
         var displayName = string.IsNullOrEmpty(sessionName) ? CurrentSessionId : sessionName;
-        return CliResult.Ok($"Created new session: {displayName}");
+        return CliResult.OkWithClear($"Created new session: {displayName}");
     }
 
     private async Task CreateNewSessionAsync(string? name)
@@ -132,7 +132,7 @@ public class SessionCli : ISessionCli
         {
             _currentSession = result.Value.store;
             _currentSessionFilePath = result.Value.filePath;
-            return CliResult.Ok($"Switched to session: {matches[0].SessionId} ({_currentSession.Count} messages)");
+            return CliResult.OkWithClear($"Switched to session: {matches[0].SessionId} ({_currentSession.Count} messages)");
         }
 
         return CliResult.Fail($"Failed to load session: {matches[0].SessionId}");
@@ -241,9 +241,10 @@ Available Commands:
     }
 }
 
-public record CliResult(bool IsCommand, bool Success, string Message)
+public record CliResult(bool IsCommand, bool Success, string Message, bool ClearScreen = false)
 {
     public static CliResult NotACommand() => new(false, true, string.Empty);
     public static CliResult Ok(string message) => new(true, true, message);
+    public static CliResult OkWithClear(string message) => new(true, true, message, true);
     public static CliResult Fail(string message) => new(true, false, message);
 }

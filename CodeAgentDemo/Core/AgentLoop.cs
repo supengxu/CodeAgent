@@ -25,6 +25,7 @@ public class AgentLoop : IAgentLoop
     private readonly IConsoleIO _console;
     private readonly ISessionCli _sessionCli;
     private readonly IConsoleUI _ui;
+    private readonly ILayoutRenderer? _layoutRenderer;
     private readonly IPlanningEngine? _planningEngine;
     private readonly ILoopController? _loopController;
     private readonly IReflectionEngine? _reflectionEngine;
@@ -34,7 +35,8 @@ public class AgentLoop : IAgentLoop
     public IReadOnlyList<ChatMessage> History => _sessionCli.CurrentSession.Messages;
 
     public AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options,
-        IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui)
+        IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui,
+        ILayoutRenderer? layoutRenderer = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
@@ -42,6 +44,7 @@ public class AgentLoop : IAgentLoop
         _console = console ?? throw new ArgumentNullException(nameof(console));
         _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
         _ui = ui ?? throw new ArgumentNullException(nameof(ui));
+        _layoutRenderer = layoutRenderer;
         _toolCallCount = 0;
 
         sessionCli.InitializeAsync().GetAwaiter().GetResult();
@@ -54,7 +57,8 @@ public class AgentLoop : IAgentLoop
     internal AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options,
         IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui,
         IPlanningEngine? planningEngine, ILoopController? loopController,
-        IReflectionEngine? reflectionEngine, IContextManager? contextManager)
+        IReflectionEngine? reflectionEngine, IContextManager? contextManager,
+        ILayoutRenderer? layoutRenderer = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
@@ -66,6 +70,7 @@ public class AgentLoop : IAgentLoop
         _loopController = loopController;
         _reflectionEngine = reflectionEngine;
         _contextManager = contextManager;
+        _layoutRenderer = layoutRenderer;
         _toolCallCount = 0;
 
         sessionCli.InitializeAsync().GetAwaiter().GetResult();
@@ -94,6 +99,12 @@ public class AgentLoop : IAgentLoop
 
         _loopController?.Reset();
         var plan = await TryGeneratePlanAsync(message, cancellationToken);
+
+        // 如果生成了计划，注入计划信息到 LLM 上下文中
+        if (plan != null && plan.Steps.Count > 0)
+        {
+            await InjectPlanContextAsync(plan, cancellationToken);
+        }
 
         while (true)
         {
@@ -150,7 +161,11 @@ public class AgentLoop : IAgentLoop
                     await _sessionCli.AppendMessageAsync(toolResultMessage);
                 }
 
-                if (plan != null) plan.AdvanceStep();
+                if (plan != null)
+                {
+                    plan.AdvanceStep();
+                    await UpdatePlanProgressAsync(plan, cancellationToken);
+                }
                 continue;
             }
 
@@ -170,7 +185,7 @@ public class AgentLoop : IAgentLoop
         while (!cancellationToken.IsCancellationRequested)
         {
             _ui.PrintPrompt();
-            var input = _console.ReadLine();
+            var input = await ReadMultiLineInputAsync(cancellationToken);
 
             if (input == null) break;
             if (string.IsNullOrWhiteSpace(input)) continue;
@@ -188,6 +203,10 @@ public class AgentLoop : IAgentLoop
                 {
                     if (result.Success)
                     {
+                        if (result.ClearScreen)
+                        {
+                            Console.Clear();
+                        }
                         _console.WriteLine(result.Message);
                     }
                     else
@@ -200,6 +219,7 @@ public class AgentLoop : IAgentLoop
 
             try
             {
+                _ui.PrintThinking();
                 await SendMessageAsync(input, cancellationToken);
             }
             catch (OperationCanceledException)
@@ -211,6 +231,34 @@ public class AgentLoop : IAgentLoop
                 _ui.PrintError(ex.Message);
             }
         }
+    }
+
+    private async Task<string?> ReadMultiLineInputAsync(CancellationToken cancellationToken)
+    {
+        if (_layoutRenderer != null)
+        {
+            var multiLineInput = new MultiLineInput("> ");
+            _layoutRenderer.RenderInput("输入 (Ctrl+Enter 提交):", multiLineInput);
+
+            try
+            {
+                var result = await multiLineInput.ReadInputAsync(cancellationToken);
+
+                return result.State switch
+                {
+                    InputState.Submitted => result.Text,
+                    InputState.Cancelled => null,
+                    InputState.Empty => string.Empty,
+                    _ => null
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+        }
+
+        return _console.ReadLine();
     }
 
     private async Task SaveAndExitAsync(CancellationToken cancellationToken)
@@ -257,6 +305,37 @@ public class AgentLoop : IAgentLoop
         }
 
         return null;
+    }
+
+    private async Task InjectPlanContextAsync(TaskPlan plan, CancellationToken cancellationToken)
+    {
+        var planText = new StringBuilder();
+        planText.AppendLine("【执行计划】请按以下步骤执行任务：");
+
+        for (int i = 0; i < plan.Steps.Count; i++)
+        {
+            planText.AppendLine($"  步骤 {i + 1}: {plan.Steps[i]}");
+        }
+
+        planText.AppendLine("\n请严格按照上述步骤依次执行，完成当前步骤后再进行下一步。");
+
+        var systemMessage = ChatMessage.CreateText(ChatRole.System, planText.ToString());
+        await _sessionCli.AppendMessageAsync(systemMessage);
+    }
+
+    private async Task UpdatePlanProgressAsync(TaskPlan plan, CancellationToken cancellationToken)
+    {
+        if (plan.IsComplete)
+        {
+            var completeMessage = ChatMessage.CreateText(ChatRole.System, "【计划进度】所有步骤已完成！");
+            await _sessionCli.AppendMessageAsync(completeMessage);
+        }
+        else
+        {
+            var progressText = $"【计划进度】当前应执行步骤 {plan.CurrentStep + 1}/{plan.Steps.Count}: {plan.GetCurrentStepDescription()}";
+            var progressMessage = ChatMessage.CreateText(ChatRole.System, progressText);
+            await _sessionCli.AppendMessageAsync(progressMessage);
+        }
     }
 
     private async Task TryCompressContextAsync(CancellationToken cancellationToken)

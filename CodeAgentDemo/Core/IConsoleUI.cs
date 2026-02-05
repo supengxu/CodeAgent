@@ -101,4 +101,9 @@ public interface IConsoleUI
     /// 打印信息消息
     /// </summary>
     void PrintInfo(string message);
+
+    /// <summary>
+    /// 打印正在思考提示
+    /// </summary>
+    void PrintThinking();
 }
