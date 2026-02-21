@@ -5,6 +5,7 @@ using CodeAgentDemo.Providers;
 using CodeAgentDemo.Services;
 using CodeAgentDemo.Tools;
 using DotNetEnv;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 var envPaths = new[]
@@ -25,19 +26,57 @@ foreach (var envPath in envPaths)
 
 try
 {
+    var configuration = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: true)
+        .AddJsonFile("appsettings.Development.json", optional: true)
+        .Build();
+
     var services = new ServiceCollection();
 
+    services.Configure<AgentConfig>(configuration.GetSection("Agent"));
+
+    var agentConfig = new AgentConfig();
+    configuration.GetSection("Agent").Bind(agentConfig);
+
+    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ENABLE_THINKING")))
+    {
+        bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var enableThinking);
+        agentConfig.Chat.EnableThinking = enableThinking;
+    }
+
+    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AI_PROVIDER")))
+    {
+        agentConfig.Provider.Name = Environment.GetEnvironmentVariable("AI_PROVIDER")!;
+    }
+
+    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY")))
+    {
+        agentConfig.Provider.ApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+    }
+
+    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_MODEL")))
+    {
+        agentConfig.Provider.Model = Environment.GetEnvironmentVariable("OPENAI_MODEL");
+    }
+
+    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_URL")))
+    {
+        agentConfig.Provider.ApiUrl = Environment.GetEnvironmentVariable("OPENAI_API_URL");
+    }
+
     var workDir = Directory.GetCurrentDirectory();
-    var sessionsDir = Path.Combine(workDir, "sessions");
+    var sessionsDir = Path.Combine(workDir, agentConfig.Session.SessionsDirectory);
 
-    var enableThinking = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_THINKING"), out var et) && et;
-
+    services.AddSingleton(agentConfig);
     services.AddSingleton(new ChatOptions
     {
-        SystemPrompt = "You are a helpful coding assistant.",
-        MaxTokens = 4096,
-        EnableThinking = enableThinking
+        SystemPrompt = agentConfig.Chat.SystemPrompt,
+        MaxTokens = agentConfig.Chat.MaxTokens,
+        EnableThinking = agentConfig.Chat.EnableThinking
     });
+    services.AddSingleton(agentConfig.LoopControl);
+    services.AddSingleton(agentConfig.Planning);
 
     services.AddSingleton<IOpenAIConverter, OpenAIConverter>();
     services.AddSingleton<IChatProvider, OpenAIProvider>();
@@ -46,7 +85,12 @@ try
     services.AddSingleton<IConsoleUI, SpectreConsoleUI>();
     services.AddSingleton<ILayoutRenderer, SplitLayoutRenderer>();
     services.AddSingleton<IConsoleIO, SpectreConsoleIO>();
-    services.AddSingleton<IAgentLoop, AgentLoop>();
+
+    services.AddSingleton<IMessageHandler, MessageHandler>();
+    services.AddSingleton<IToolExecutor, ToolExecutor>();
+    services.AddSingleton<IStreamProcessor, StreamProcessor>();
+    services.AddSingleton<ILoopController, LoopController>();
+    services.AddSingleton<ILoopManager, LoopManager>();
 
     services.AddHttpClient("WebSearch");
     services.AddHttpClient("CodeSearch");
@@ -60,6 +104,8 @@ try
             httpClientFactory.CreateClient("CodeSearch")
         );
     });
+
+    services.AddSingleton<IAgentLoop, AgentLoop>();
 
     var serviceProvider = services.BuildServiceProvider();
 

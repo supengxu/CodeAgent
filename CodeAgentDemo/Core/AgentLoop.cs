@@ -4,7 +4,6 @@ using CodeAgentDemo.Models;
 using CodeAgentDemo.Providers;
 using CodeAgentDemo.Tools;
 
-
 namespace CodeAgentDemo.Core;
 
 public record AgentResponse(IEnumerable<ContentBlock> Content, string StopReason);
@@ -26,16 +25,29 @@ public class AgentLoop : IAgentLoop
     private readonly ISessionCli _sessionCli;
     private readonly IConsoleUI _ui;
     private readonly ILayoutRenderer? _layoutRenderer;
+
+    private readonly IMessageHandler _messageHandler;
+    private readonly IToolExecutor _toolExecutor;
+    private readonly IStreamProcessor _streamProcessor;
+    private readonly ILoopManager? _loopManager;
     private readonly IPlanningEngine? _planningEngine;
-    private readonly ILoopController? _loopController;
-    private readonly IReflectionEngine? _reflectionEngine;
     private readonly IContextManager? _contextManager;
-    private int _toolCallCount;
 
     public IReadOnlyList<ChatMessage> History => _sessionCli.CurrentSession.Messages;
 
-    public AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options,
-        IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui,
+    public AgentLoop(
+        IChatProvider provider,
+        IToolRegistry tools,
+        ChatOptions options,
+        IConsoleIO console,
+        ISessionCli sessionCli,
+        IConsoleUI ui,
+        IMessageHandler messageHandler,
+        IToolExecutor toolExecutor,
+        IStreamProcessor streamProcessor,
+        ILoopManager? loopManager = null,
+        IPlanningEngine? planningEngine = null,
+        IContextManager? contextManager = null,
         ILayoutRenderer? layoutRenderer = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -44,39 +56,23 @@ public class AgentLoop : IAgentLoop
         _console = console ?? throw new ArgumentNullException(nameof(console));
         _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
         _ui = ui ?? throw new ArgumentNullException(nameof(ui));
-        _layoutRenderer = layoutRenderer;
-        _toolCallCount = 0;
-
-        sessionCli.InitializeAsync().GetAwaiter().GetResult();
-        if (sessionCli.CurrentSession.Count > 0)
-        {
-            _ui.DisplaySessionHistory(sessionCli.CurrentSession.Messages);
-        }
-    }
-
-    internal AgentLoop(IChatProvider provider, IToolRegistry tools, ChatOptions options,
-        IConsoleIO console, ISessionCli sessionCli, IConsoleUI ui,
-        IPlanningEngine? planningEngine, ILoopController? loopController,
-        IReflectionEngine? reflectionEngine, IContextManager? contextManager,
-        ILayoutRenderer? layoutRenderer = null)
-    {
-        _provider = provider ?? throw new ArgumentNullException(nameof(provider));
-        _tools = tools ?? throw new ArgumentNullException(nameof(tools));
-        _options = options ?? new ChatOptions();
-        _console = console ?? throw new ArgumentNullException(nameof(console));
-        _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));
-        _ui = ui ?? throw new ArgumentNullException(nameof(ui));
+        _messageHandler = messageHandler ?? throw new ArgumentNullException(nameof(messageHandler));
+        _toolExecutor = toolExecutor ?? throw new ArgumentNullException(nameof(toolExecutor));
+        _streamProcessor = streamProcessor ?? throw new ArgumentNullException(nameof(streamProcessor));
+        _loopManager = loopManager;
         _planningEngine = planningEngine;
-        _loopController = loopController;
-        _reflectionEngine = reflectionEngine;
         _contextManager = contextManager;
         _layoutRenderer = layoutRenderer;
-        _toolCallCount = 0;
 
-        sessionCli.InitializeAsync().GetAwaiter().GetResult();
-        if (sessionCli.CurrentSession.Count > 0)
+        InitializeSession();
+    }
+
+    private void InitializeSession()
+    {
+        _sessionCli.InitializeAsync().GetAwaiter().GetResult();
+        if (_sessionCli.CurrentSession.Count > 0)
         {
-            _ui.DisplaySessionHistory(sessionCli.CurrentSession.Messages);
+            _ui.DisplaySessionHistory(_sessionCli.CurrentSession.Messages);
         }
     }
 
@@ -90,32 +86,30 @@ public class AgentLoop : IAgentLoop
         if (string.IsNullOrWhiteSpace(message))
             throw new ArgumentException("Message cannot be empty", nameof(message));
 
-        var userMessage = ChatMessage.CreateText(ChatRole.User, message);
-        await _sessionCli.AppendMessageAsync(userMessage);
+        await _messageHandler.CreateUserMessageAsync(message);
 
         var startTime = DateTime.Now;
         var totalInputTokens = 0;
         var totalOutputTokens = 0;
 
-        _loopController?.Reset();
-        var plan = await TryGeneratePlanAsync(message, cancellationToken);
+        _loopManager?.Reset();
 
-        // 如果生成了计划，注入计划信息到 LLM 上下文中
+        var plan = await TryGeneratePlanAsync(message, cancellationToken);
         if (plan != null && plan.Steps.Count > 0)
         {
-            await InjectPlanContextAsync(plan, cancellationToken);
+            await InjectPlanContextAsync(plan);
         }
 
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (_loopController != null)
+            if (_loopManager != null)
             {
-                var canContinue = await _loopController.CheckIterationAsync(cancellationToken);
+                var canContinue = await _loopManager.CanContinueAsync(cancellationToken);
                 if (!canContinue)
                 {
-                    return new AgentResponse(Array.Empty<ContentBlock>(), DetermineLoopStopReason());
+                    return new AgentResponse(Array.Empty<ContentBlock>(), _loopManager.DetermineStopReason());
                 }
             }
 
@@ -127,22 +121,21 @@ public class AgentLoop : IAgentLoop
             {
                 totalInputTokens += response.Usage.InputTokens;
                 totalOutputTokens += response.Usage.OutputTokens;
-                _loopController?.UpdateTokenUsage(totalInputTokens + totalOutputTokens);
+                _loopManager?.UpdateTokenUsage(totalInputTokens + totalOutputTokens);
             }
 
             if (response.Content.Any())
             {
-                var assistantMessage = new ChatMessage(ChatRole.Assistant, response.Content);
-                await _sessionCli.AppendMessageAsync(assistantMessage);
+                await _messageHandler.CreateAssistantMessageAsync(response.Content, cancellationToken);
             }
 
             if (response.StopReason == "tool_use" && response.ToolCalls.Count > 0)
             {
-                if (_loopController != null)
+                if (_loopManager != null)
                 {
-                    var stateHash = _loopController.GetStateHash(
+                    var stateHash = _loopManager.GetStateHash(
                         string.Join(",", response.ToolCalls.Select(t => $"{t.Name}:{t.Arguments}")));
-                    if (_loopController.DetectCycle(stateHash))
+                    if (_loopManager.DetectCycle(stateHash))
                     {
                         _ui.PrintWarning("检测到循环行为，停止执行");
                         return new AgentResponse(Array.Empty<ContentBlock>(), "cycle_detected");
@@ -151,20 +144,14 @@ public class AgentLoop : IAgentLoop
 
                 foreach (var toolCall in response.ToolCalls)
                 {
-                    var result = await ExecuteToolWithReflectionAsync(toolCall, cancellationToken);
-
-                    var toolResultMessage = new ChatMessage(ChatRole.Tool, new[]
-                    {
-                        new ToolResultBlock(toolCall.Id, result.Output, !result.Success)
-                    });
-
-                    await _sessionCli.AppendMessageAsync(toolResultMessage);
+                    var result = await _toolExecutor.ExecuteAsync(toolCall, cancellationToken);
+                    await _messageHandler.CreateToolResultMessageAsync(toolCall.Id, result.Output, !result.Success);
                 }
 
                 if (plan != null)
                 {
                     plan.AdvanceStep();
-                    await UpdatePlanProgressAsync(plan, cancellationToken);
+                    await UpdatePlanProgressAsync(plan);
                 }
                 continue;
             }
@@ -192,7 +179,7 @@ public class AgentLoop : IAgentLoop
 
             if (input.Trim().ToLower() is "quit" or "exit")
             {
-                await SaveAndExitAsync(cancellationToken);
+                await SaveAndExitAsync();
                 break;
             }
 
@@ -261,12 +248,11 @@ public class AgentLoop : IAgentLoop
         return _console.ReadLine();
     }
 
-    private async Task SaveAndExitAsync(CancellationToken cancellationToken)
+    private async Task SaveAndExitAsync()
     {
         await _sessionCli.SaveCurrentSessionAsync();
-        _console.WriteLine($"\nSession saved.");
-        _ui.PrintStats(_sessionCli.CurrentSession.Count, _toolCallCount);
-
+        _console.WriteLine("\nSession saved.");
+        _ui.PrintStats(_sessionCli.CurrentSession.Count, _toolExecutor.ToolCallCount);
         _ui.PrintGoodbye();
     }
 
@@ -307,7 +293,7 @@ public class AgentLoop : IAgentLoop
         return null;
     }
 
-    private async Task InjectPlanContextAsync(TaskPlan plan, CancellationToken cancellationToken)
+    private async Task InjectPlanContextAsync(TaskPlan plan)
     {
         var planText = new StringBuilder();
         planText.AppendLine("【执行计划】请按以下步骤执行任务：");
@@ -319,22 +305,19 @@ public class AgentLoop : IAgentLoop
 
         planText.AppendLine("\n请严格按照上述步骤依次执行，完成当前步骤后再进行下一步。");
 
-        var systemMessage = ChatMessage.CreateText(ChatRole.System, planText.ToString());
-        await _sessionCli.AppendMessageAsync(systemMessage);
+        await _messageHandler.CreateSystemMessageAsync(planText.ToString());
     }
 
-    private async Task UpdatePlanProgressAsync(TaskPlan plan, CancellationToken cancellationToken)
+    private async Task UpdatePlanProgressAsync(TaskPlan plan)
     {
         if (plan.IsComplete)
         {
-            var completeMessage = ChatMessage.CreateText(ChatRole.System, "【计划进度】所有步骤已完成！");
-            await _sessionCli.AppendMessageAsync(completeMessage);
+            await _messageHandler.CreateSystemMessageAsync("【计划进度】所有步骤已完成！");
         }
         else
         {
             var progressText = $"【计划进度】当前应执行步骤 {plan.CurrentStep + 1}/{plan.Steps.Count}: {plan.GetCurrentStepDescription()}";
-            var progressMessage = ChatMessage.CreateText(ChatRole.System, progressText);
-            await _sessionCli.AppendMessageAsync(progressMessage);
+            await _messageHandler.CreateSystemMessageAsync(progressText);
         }
     }
 
@@ -365,238 +348,13 @@ public class AgentLoop : IAgentLoop
         }
     }
 
-    private async Task<ToolResult> ExecuteToolWithReflectionAsync(ToolCall toolCall, CancellationToken cancellationToken)
-    {
-        var attemptCount = 1;
-        const int maxReflectionAttempts = 3;
-
-        while (true)
-        {
-            var result = await ExecuteToolAsync(toolCall, cancellationToken);
-
-            if (result.Success) return result;
-
-            if (_reflectionEngine == null) return result;
-
-            var shouldReflect = await _reflectionEngine.ShouldReflectAsync(result, attemptCount, cancellationToken);
-            if (!shouldReflect) return result;
-
-            _ui.PrintInfo($"工具执行失败 (尝试 {attemptCount})，正在反思...");
-
-            var reflectionContext = new ReflectionContext
-            {
-                ToolName = toolCall.Name,
-                Arguments = toolCall.Arguments,
-                ErrorMessage = result.Output,
-                AttemptNumber = attemptCount
-            };
-
-            var reflectionResult = await _reflectionEngine.ReflectAsync(reflectionContext, cancellationToken);
-
-            _ui.PrintInfo($"反思分析: {reflectionResult.Analysis}");
-            if (reflectionResult.Suggestions.Count > 0)
-            {
-                _ui.PrintInfo("建议:");
-                foreach (var suggestion in reflectionResult.Suggestions)
-                {
-                    _ui.PrintInfo($"  - {suggestion}");
-                }
-            }
-
-            if (!reflectionResult.ShouldRetry) return result;
-
-            attemptCount++;
-            if (attemptCount > maxReflectionAttempts)
-            {
-                _ui.PrintWarning("已达到最大重试次数");
-                return result;
-            }
-
-            _ui.PrintInfo("正在重试...");
-        }
-    }
-
-    private string DetermineLoopStopReason()
-    {
-        if (_loopController == null) return "end_turn";
-
-        var state = _loopController.State;
-
-        if (state.IterationLimitReached)
-        {
-            _ui.PrintWarning("已达到最大迭代次数限制");
-            return "iteration_limit";
-        }
-
-        if (state.TokenLimitReached)
-        {
-            _ui.PrintWarning("已达到 token 使用限制");
-            return "token_limit";
-        }
-
-        if (state.DetectedCycle)
-        {
-            _ui.PrintWarning("检测到循环行为");
-            return "cycle_detected";
-        }
-
-        return "loop_control_stop";
-    }
-
     private async Task<StreamResponse> CollectStreamingResponseAsync(CancellationToken cancellationToken)
     {
         _options.Tools = _tools.GetAllTools()
             .Select(t => new ToolDefinition(t.Name, t.Description, t.InputSchema))
             .ToList();
 
-        var textBuilder = new StringBuilder();
-        var thinkingBuilder = new StringBuilder();
-        var toolCallBuilders = new List<ToolCallBuilder>();
-        string? stopReason = null;
-        bool toolCallDetected = false;
-        UsageInfo? usage = null;
-
-        _ui.BeginStream();
-
-        await foreach (var chunk in _provider.CompleteStreamingAsync(History, _options, cancellationToken))
-        {
-            if (!string.IsNullOrEmpty(chunk.TextDelta))
-            {
-                _ui.StreamText(chunk.TextDelta);
-                textBuilder.Append(chunk.TextDelta);
-            }
-
-            if (!string.IsNullOrEmpty(chunk.ThinkingDelta))
-            {
-                _ui.StreamThinking(chunk.ThinkingDelta);
-                thinkingBuilder.Append(chunk.ThinkingDelta);
-            }
-
-            if (chunk.ToolCallDelta != null)
-            {
-                if (!toolCallDetected)
-                {
-                    _ui.PrintToolCallDetected();
-                    toolCallDetected = true;
-                }
-                AccumulateToolCall(toolCallBuilders, chunk.ToolCallDelta);
-            }
-
-            if (!string.IsNullOrEmpty(chunk.StopReason))
-            {
-                stopReason = chunk.StopReason;
-            }
-
-            if (chunk.Usage != null)
-            {
-                usage = chunk.Usage;
-            }
-        }
-
-        _ui.EndStream();
-
-        var contentBlocks = BuildContentBlocks(textBuilder, thinkingBuilder);
-        var toolCalls = BuildToolCalls(toolCallBuilders);
-
-        if (stopReason == null && toolCalls.Count > 0)
-        {
-            stopReason = "tool_use";
-        }
-
-        return new StreamResponse(contentBlocks, toolCalls, stopReason ?? "end_turn", usage);
-    }
-
-    private void AccumulateToolCall(List<ToolCallBuilder> builders, ToolCallDelta delta)
-    {
-        if (!string.IsNullOrEmpty(delta.Id))
-        {
-            builders.Add(new ToolCallBuilder { Id = delta.Id, Name = delta.Name });
-        }
-        else if (builders.Count > 0 && !string.IsNullOrEmpty(delta.Name))
-        {
-            builders.Last().Name = delta.Name;
-        }
-
-        if (builders.Count > 0 && !string.IsNullOrEmpty(delta.ArgumentsDelta))
-        {
-            builders.Last().ArgumentsBuilder.Append(delta.ArgumentsDelta);
-        }
-    }
-
-    private IEnumerable<ContentBlock> BuildContentBlocks(StringBuilder text, StringBuilder thinking)
-    {
-        var blocks = new List<ContentBlock>();
-        if (thinking.Length > 0) blocks.Add(new ThinkingBlock(thinking.ToString()));
-        if (text.Length > 0) blocks.Add(new TextBlock(text.ToString()));
-        return blocks;
-    }
-
-    private IReadOnlyList<ToolCall> BuildToolCalls(List<ToolCallBuilder> builders)
-    {
-        return builders.Select(b => new ToolCall(
-            b.Id ?? throw new InvalidOperationException("Tool call ID is null"),
-            b.Name ?? throw new InvalidOperationException("Tool call name is null"),
-            System.Text.Json.JsonDocument.Parse(b.ArgumentsBuilder.ToString()).RootElement
-        )).ToList();
-    }
-
-    private async Task<ToolResult> ExecuteToolAsync(ToolCall toolCall, CancellationToken cancellationToken)
-    {
-        var tool = _tools.GetTool(toolCall.Name);
-        if (tool == null)
-        {
-            _ui.PrintError($"工具 '{toolCall.Name}' 未找到");
-            return new ToolResult(false, $"Tool '{toolCall.Name}' not found.");
-        }
-
-        _ui.PrintToolCallStart(toolCall.Name, toolCall.Arguments.ToString());
-
-        bool confirmed;
-        if (tool.RequiresConfirmation(toolCall.Arguments))
-        {
-            _ui.PrintToolConfirmation(toolCall.Name);
-            _console.Write("    执行? [y/N]: ");
-
-            var confirmation = _console.ReadLine();
-            confirmed = confirmation?.ToLower() == "y";
-        }
-        else
-        {
-            confirmed = true;
-        }
-
-        if (!confirmed)
-        {
-            _ui.PrintWarning("工具执行已取消");
-            return new ToolResult(false, "Tool execution cancelled by user");
-        }
-
-        try
-        {
-            _ui.PrintToolExecuting(toolCall.Name);
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromMinutes(5));
-            var result = await tool.ExecuteAsync(toolCall.Arguments, cts.Token);
-            _toolCallCount++;
-            _ui.PrintToolResult(toolCall.Name, result.Output, result.Success);
-            return result;
-        }
-        catch (OperationCanceledException)
-        {
-            _ui.PrintToolResult(toolCall.Name, "执行超时", false);
-            return new ToolResult(false, "Tool execution timed out.");
-        }
-        catch (Exception ex)
-        {
-            _ui.PrintToolResult(toolCall.Name, ex.Message, false);
-            return new ToolResult(false, $"Error: {ex.Message}");
-        }
-    }
-
-    private class ToolCallBuilder
-    {
-        public string? Id { get; set; }
-        public string? Name { get; set; }
-        public StringBuilder ArgumentsBuilder { get; } = new();
+        var stream = _provider.CompleteStreamingAsync(History, _options, cancellationToken);
+        return await _streamProcessor.ProcessAsync(stream, cancellationToken);
     }
 }

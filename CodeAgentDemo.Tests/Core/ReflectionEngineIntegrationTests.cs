@@ -433,20 +433,20 @@ public class ReflectionEngineIntegrationTests
         IChatProvider? provider = null,
         IReflectionEngine? reflectionEngine = null)
     {
-        var chatProvider = provider ?? _chatProviderMock.Object;
-        var options = new ChatOptions();
+        _sessionCli.InitializeAsync().GetAwaiter().GetResult();
+        var ui = new ConsoleUI();
+        var console = _consoleMock.Object;
 
         return new AgentLoop(
-            chatProvider,
+            provider ?? _chatProviderMock.Object,
             _tools,
-            options,
-            _consoleMock.Object,
+            new ChatOptions(),
+            console,
             _sessionCli,
-            new ConsoleUI(),
-            null, // planningEngine
-            null, // loopController
-            reflectionEngine,
-            null // contextManager
+            ui,
+            new MessageHandler(_sessionCli),
+            new ToolExecutor(_tools, ui, console, reflectionEngine),
+            new StreamProcessor(ui)
         );
     }
 
