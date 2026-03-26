@@ -5,8 +5,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Examples;
 
 /// <summary>
-/// Example demonstrating JSONL session persistence usage.
-/// </summary>
+/// 演示 JSONL 会话持久化的使用示例。</summary>
 public class JsonlExample
 {
     private readonly SessionPersistence _sessionPersistence;
@@ -22,7 +21,7 @@ public class JsonlExample
     {
         var sessionStore = new SessionStore();
 
-        // Add sample messages to the session store
+        // 添加示例消息到会话存储
         sessionStore.AddMessage(ChatRole.User, "Hello world");
         sessionStore.AddMessage(ChatRole.Assistant, "Greetings, user!");
         sessionStore.AddMessage(ChatRole.System, [
@@ -33,42 +32,42 @@ public class JsonlExample
         var sampleFilePath = Path.Join(Path.GetTempPath(), "session.jsonl");
         Console.WriteLine($"Saving session to: {sampleFilePath}");
 
-        // Save the session to JSONL file
+        // 将会话保存到 JSONL 文件
         await _sessionPersistence.SaveSessionAsync(sessionStore, sampleFilePath);
         Console.WriteLine("Session saved successfully");
 
-        // Load the session back
+        // 加载会话
         var loadedSession = await _sessionPersistence.LoadSessionAsync(sampleFilePath);
         Console.WriteLine($"Loaded session with {loadedSession.Count} messages:");
 
-        // Display the loaded messages
+        // 显示加载的消息
         foreach (var message in loadedSession.Messages)
         {
             Console.WriteLine($"  Role: {message.Role}, Content blocks: {message.Content.Count()}");
         }
 
-        // Now use streaming processor for large sets of data
+        // 现在使用流式处理器处理大数据集
         Console.WriteLine("\nUsing streaming processor to append additional messages...");
 
-        // Add a few more messages and append them
+        // 添加更多消息并追加
         var newMessage = ChatMessage.CreateText(ChatRole.User, "Additional message after persistence");
         await _sessionPersistence.AppendToSessionAsync(newMessage, sampleFilePath);
 
         Console.WriteLine("Additional message appended.");
 
-        // Demonstrate streaming processing of the file
+        // 演示流式处理文件
         Console.WriteLine("\nStreaming through all messages:");
         await foreach (var message in _streamProcessor.ReadJsonlFileAsync(sampleFilePath))
         {
             Console.WriteLine($"  Streaming message - Role: {message.Role}, Content blocks: {message.Content.Count()}");
         }
 
-        // Verify by loading with the simpler method
+        // 通过简单方法重新加载验证
         Console.WriteLine("\nReloading file to verify appended message:");
         var finalSession = await _sessionPersistence.LoadSessionAsync(sampleFilePath);
         Console.WriteLine($"Final session has {finalSession.Count} messages");
 
-        // Clean up the temporary file
+        // 清理临时文件
         if (File.Exists(sampleFilePath))
         {
             File.Delete(sampleFilePath);

@@ -1,7 +1,7 @@
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Represents a chat message with role and content blocks.
+/// 表示聊天消息，包含角色和内容块。
 /// </summary>
 public record ChatMessage(
     ChatRole Role,
@@ -9,7 +9,7 @@ public record ChatMessage(
 )
 {
     /// <summary>
-    /// Creates a simple text message.
+    /// 创建简单的文本消息。
     /// </summary>
     public static ChatMessage CreateText(ChatRole role, string text)
     {

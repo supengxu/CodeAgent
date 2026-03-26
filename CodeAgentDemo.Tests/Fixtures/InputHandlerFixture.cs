@@ -5,12 +5,12 @@ using Moq;
 namespace CodeAgentDemo.Tests.Fixtures;
 
 /// <summary>
-/// Test fixtures for IInputHandler testing
+/// IInputHandler 测试的测试夹具
 /// </summary>
 public static class InputHandlerFixture
 {
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; with basic setup
+    /// 创建带有基本设置的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMock()
     {
@@ -18,7 +18,7 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; that returns the specified InputResult
+    /// 创建返回指定 InputResult 的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMockReturning(InputResult result)
     {
@@ -29,7 +29,7 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; that returns submitted input with the given text
+    /// 创建返回带有给定文本的已提交输入的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMockWithSubmittedText(string text)
     {
@@ -37,7 +37,7 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; that returns cancelled input
+    /// 创建返回已取消输入的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMockWithCancelled()
     {
@@ -45,7 +45,7 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; that returns empty input
+    /// 创建返回空输入的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMockWithEmpty()
     {
@@ -53,7 +53,7 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; that returns a sequence of results
+    /// 创建返回结果序列的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMockWithSequence(params InputResult[] results)
     {
@@ -65,7 +65,7 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Creates a Mock&lt;IInputHandler&gt; that throws OperationCanceledException
+    /// 创建抛出 OperationCanceledException 的 Mock&lt;IInputHandler&gt;
     /// </summary>
     public static Mock<IInputHandler> CreateMockThrowingCancellation()
     {
@@ -76,12 +76,12 @@ public static class InputHandlerFixture
     }
 
     /// <summary>
-    /// Test data generator for InputResult
+    /// InputResult 的测试数据生成器
     /// </summary>
     public static class TestData
     {
         /// <summary>
-        /// Generates a random submitted InputResult with text of specified length
+        /// 生成指定长度的随机已提交 InputResult
         /// </summary>
         public static InputResult GenerateSubmitted(int textLength = 10)
         {
@@ -90,7 +90,7 @@ public static class InputHandlerFixture
         }
 
         /// <summary>
-        /// Generates a random non-empty submitted InputResult
+        /// 生成随机非空已提交 InputResult
         /// </summary>
         public static InputResult GenerateSubmittedNonEmpty()
         {
@@ -98,17 +98,17 @@ public static class InputHandlerFixture
         }
 
         /// <summary>
-        /// Returns cancelled InputResult
+        /// 返回已取消的 InputResult
         /// </summary>
         public static InputResult Cancelled() => InputResult.Cancelled();
 
         /// <summary>
-        /// Returns empty InputResult
+        /// 返回空 InputResult
         /// </summary>
         public static InputResult Empty() => InputResult.Empty();
 
         /// <summary>
-        /// Generates various InputResult states for parameterized tests
+        /// 生成各种 InputResult 状态用于参数化测试
         /// </summary>
         public static IEnumerable<object[]> GenerateAllStates()
         {
@@ -118,7 +118,7 @@ public static class InputHandlerFixture
         }
 
         /// <summary>
-        /// Generates various submitted InputResults with different text patterns
+        /// 生成各种不同文本模式的已提交 InputResult
         /// </summary>
         public static IEnumerable<object[]> GenerateSubmittedVariations()
         {
@@ -132,7 +132,7 @@ public static class InputHandlerFixture
 }
 
 /// <summary>
-/// xUnit collection fixture for InputHandler tests
+/// InputHandler 测试的 xUnit 集合夹具
 /// </summary>
 public class InputHandlerCollectionFixture : IDisposable
 {
@@ -145,10 +145,10 @@ public class InputHandlerCollectionFixture : IDisposable
 }
 
 /// <summary>
-/// Collection definition for InputHandler tests
+/// InputHandler 测试的集合定义
 /// </summary>
 [CollectionDefinition("InputHandlerTests")]
 public class InputHandlerTestCollection : ICollectionFixture<InputHandlerCollectionFixture>
 {
-    // This class serves as the collection definition
+    // 此类作为集合定义
 }

@@ -215,7 +215,7 @@ public class BashTool : ITool
     {
         var firstWord = command.TrimStart().Split(' ')[0];
 
-        // Strictly read-only commands that don't modify system state
+        // 严格只读命令，不修改系统状态
         var safeCommands = new HashSet<string>
         {
             "ls", "cat", "head", "tail", "grep", "find", "wc", "sort", "uniq",

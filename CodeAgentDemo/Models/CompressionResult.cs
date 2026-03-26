@@ -1,32 +1,32 @@
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Result of a context compression operation.
+/// 上下文压缩操作的结果。
 /// </summary>
 public record CompressionResult
 {
     /// <summary>
-    /// The compressed list of messages after the operation.
+    /// 压缩后的消息列表。
     /// </summary>
     public required IReadOnlyList<ChatMessage> CompressedMessages { get; init; }
 
     /// <summary>
-    /// Number of tokens removed during compression.
+    /// 压缩过程中移除的令牌数。
     /// </summary>
     public int RemovedTokens { get; init; }
 
     /// <summary>
-    /// Indicates whether the compression was successful.
+    /// 压缩是否成功。
     /// </summary>
     public bool Success { get; init; }
 
     /// <summary>
-    /// Optional error message if compression failed.
+    /// 压缩失败时的错误信息。
     /// </summary>
     public string? ErrorMessage { get; init; }
 
     /// <summary>
-    /// Creates a successful compression result.
+    /// 创建成功的压缩结果。
     /// </summary>
     public static CompressionResult Succeeded(IReadOnlyList<ChatMessage> messages, int removedTokens)
     {
@@ -39,7 +39,7 @@ public record CompressionResult
     }
 
     /// <summary>
-    /// Creates a failed compression result.
+    /// 创建失败的压缩结果。
     /// </summary>
     public static CompressionResult Failed(string errorMessage)
     {

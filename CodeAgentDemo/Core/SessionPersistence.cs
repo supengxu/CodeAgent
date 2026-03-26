@@ -5,8 +5,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Provides JSONL-based session persistence with robust error handling, 
-/// polymorphic ContentBlock serialization, and concurrent access protection.
+/// 提供基于 JSONL 的会话持久化，具有健壮的错误处理、ContentBlock 多态序列化和并发访问保护。
 /// </summary>
 public class SessionPersistence
 {
@@ -29,18 +28,18 @@ public class SessionPersistence
             ReadCommentHandling = JsonCommentHandling.Skip
         };
 
-        // Configure polymorphic serialization for ContentBlock hierarchy
+        // 为 ContentBlock 层次结构配置多态序列化
         options.Converters.Add(new ContentBlockJsonConverterFactory());
 
         return options;
     }
 
     /// <summary>
-    /// Asynchronously loads a session from a JSONL file.
+    /// 从 JSONL 文件异步加载会话。
     /// </summary>
-    /// <param name="filePath">Path to the JSONL file containing the session</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Loaded SessionStore with messages</returns>
+    /// <param name="filePath">包含会话的 JSONL 文件路径</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>包含消息的已加载 SessionStore</returns>
     public async Task<SessionStore> LoadSessionAsync(string filePath, CancellationToken cancellationToken = default)
     {
         var sessionStore = new SessionStore();
@@ -50,7 +49,7 @@ public class SessionPersistence
             return sessionStore;
         }
 
-        // Use FileShare.ReadWrite to allow concurrent access 
+        // 使用 FileShare.ReadWrite 允许并发访问 
         using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize: 4096, useAsync: true);
         using var reader = new StreamReader(fileStream);
 
@@ -76,16 +75,16 @@ public class SessionPersistence
             }
             catch (JsonException ex)
             {
-                // Log malformed JSON but continue processing other lines
+                // 记录格式错误的 JSON 但继续处理其他行
                 OnDeserializationError(line, lineNumber, ex, filePath);
 
-                // Continue processing the rest of the file
+                // 继续处理文件的其余部分
                 continue;
             }
             catch (Exception ex)
             {
-                // Log unexpected errors but continue processing
-                OnDeserializationError(line, lineNumber, new JsonException($"Unexpected error deserializing line {lineNumber}", ex), filePath);
+                // 记录意外错误但继续处理
+                OnDeserializationError(line, lineNumber, new JsonException($"反序列化第 {lineNumber} 行时发生意外错误", ex), filePath);
                 continue;
             }
         }
@@ -94,28 +93,28 @@ public class SessionPersistence
     }
 
     /// <summary>
-    /// Asynchronously saves a session to a JSONL file with file mutex for thread safety.
-    /// Each message is written as a separate JSON line.
+    /// 异步将会话保存到 JSONL 文件，使用文件互斥锁保证线程安全。
+    /// 每条消息作为单独的 JSON 行写入。
     /// </summary>
-    /// <param name="sessionStore">The session store to save</param>
-    /// <param name="filePath">Path to the JSONL file</param>
-    /// <param name="cancellationToken">Cancellation token</param>
+    /// <param name="sessionStore">要保存的会话存储</param>
+    /// <param name="filePath">JSONL 文件路径</param>
+    /// <param name="cancellationToken">取消令牌</param>
     public async Task SaveSessionAsync(SessionStore sessionStore, string filePath, CancellationToken cancellationToken = default)
     {
-        // Use a keyed_semaphore for coordinating access to specific files across threads
+        // 使用 keyed_semaphore 协调跨线程对特定文件的访问
         var semaphore = GetSemaphoreForFile(filePath);
 
         await semaphore.WaitAsync(cancellationToken);
         try
         {
-            // Ensure directory exists
+            // 确保目录存在
             var directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            // Use FileShare.None during write to prevent concurrent modifications
+            // 写入时使用 FileShare.None 防止并发修改
             using var fileStream = new FileStream(
                 filePath,
                 FileMode.Create,
@@ -130,7 +129,7 @@ public class SessionPersistence
             {
                 var jsonLine = JsonSerializer.Serialize(message, _jsonOptions);
                 await writer.WriteLineAsync(jsonLine);
-                await writer.FlushAsync(); // Ensure data is written immediately
+                await writer.FlushAsync(); // 确保数据立即写入
             }
         }
         finally
@@ -140,27 +139,27 @@ public class SessionPersistence
     }
 
     /// <summary>
-    /// Asynchronously appends a message to an existing JSONL session file.
+    /// 异步将消息追加到现有 JSONL 会话文件。
     /// </summary>
-    /// <param name="message">Message to append</param>
-    /// <param name="filePath">Path to the JSONL file</param>
-    /// <param name="cancellationToken">Cancellation token</param>
+    /// <param name="message">要追加的消息</param>
+    /// <param name="filePath">JSONL 文件路径</param>
+    /// <param name="cancellationToken">取消令牌</param>
     public async Task AppendToSessionAsync(ChatMessage message, string filePath, CancellationToken cancellationToken = default)
     {
-        // Use a keyed_semaphore for coordinating access to specific files across threads
+        // 使用 keyed_semaphore 协调跨线程对特定文件的访问
         var semaphore = GetSemaphoreForFile(filePath);
 
         await semaphore.WaitAsync(cancellationToken);
         try
         {
-            // Ensure directory exists
+            // 确保目录存在
             var directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            // Use append mode with FileShare.Read to allow concurrent reads
+            // 使用追加模式和 FileShare.Read 允许并发读取
             using var fileStream = new FileStream(
                 filePath,
                 FileMode.Append,
@@ -195,20 +194,19 @@ public class SessionPersistence
     }
 
     /// <summary>
-    /// Handles deserialization errors during the loading process.
+    /// 处理加载过程中的反序列化错误。
     /// </summary>
     protected virtual void OnDeserializationError(string line, int lineNumber, JsonException exception, string fileName)
     {
-        // Log the error to stderr with file and line info for diagnostic purposes
+        // 将错误记录到 stderr 并提供文件信息和行号用于诊断
         Console.Error.WriteLine($"Warning: Malformed JSON at {fileName}:{lineNumber}: {exception.Message}");
         Console.Error.WriteLine($"Problematic line: {line}");
     }
 }
 
 /// <summary>
-/// Custom JSON converter factory to handle polymorphic serialization of ContentBlock types.
-/// Uses a type discriminator field to determine which concrete ContentBlock implementation 
-/// to instantiate during deserialization.
+/// 自定义 JSON 转换器工厂，用于处理 ContentBlock 类型的多态序列化。
+/// 使用类型鉴别器字段来确定在反序列化期间实例化哪个具体的 ContentBlock 实现。
 /// </summary>
 public class ContentBlockJsonConverterFactory : JsonConverterFactory
 {
@@ -306,7 +304,7 @@ public class ContentBlockJsonConverterFactory : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, ContentBlock value, JsonSerializerOptions options)
         {
-            // Add a type discriminator for deserialization identification
+            // 添加类型鉴别器用于反序列化识别
             if (value is TextBlock textBlock)
             {
                 writer.WriteStartObject();
@@ -348,7 +346,7 @@ public class ContentBlockJsonConverterFactory : JsonConverterFactory
     }
 }
 
-// Extension method to help convert JsonElement to objects
+// 帮助将 JsonElement 转换为对象的扩展方法
 internal static class JsonElementExtensions
 {
     internal static T ToObjectFromJson<T>(this JsonElement element, JsonSerializerOptions options)

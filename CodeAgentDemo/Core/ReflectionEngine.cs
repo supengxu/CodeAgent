@@ -7,8 +7,8 @@ using CodeAgentDemo.Tools;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of reflection engine that analyzes failures and generates correction suggestions.
-/// Reflection is triggered only on failure, not on success.
+/// 反思引擎的实现，用于分析失败并生成纠正建议。
+/// 反思仅在失败时触发，成功时不会触发。
 /// </summary>
 public class ReflectionEngine : IReflectionEngine
 {
@@ -18,7 +18,7 @@ public class ReflectionEngine : IReflectionEngine
     private int _tokenBudget;
 
     /// <summary>
-    /// System prompt for reflection analysis.
+    /// 反思分析的系统提示。
     /// </summary>
     private const string ReflectionSystemPrompt = @"You are a reflection engine that analyzes tool execution failures and provides correction suggestions.
 
@@ -37,11 +37,11 @@ Format your response as JSON:
 Be concise and focus on actionable corrections.";
 
     /// <summary>
-    /// Initializes a new instance of the ReflectionEngine class.
+    /// 初始化 ReflectionEngine 类的新实例。
     /// </summary>
-    /// <param name="chatProvider">The chat provider for LLM calls.</param>
-    /// <param name="config">Reflection configuration.</param>
-    /// <param name="totalTokenBudget">Total token budget for the session (used to calculate reflection budget).</param>
+    /// <param name="chatProvider">用于 LLM 调用的聊天提供商。</param>
+    /// <param name="config">反思配置。</param>
+    /// <param name="totalTokenBudget">会话的总 token 预算（用于计算反思预算）。</param>
     public ReflectionEngine(IChatProvider chatProvider, ReflectionConfig? config = null, int totalTokenBudget = 100000)
     {
         _chatProvider = chatProvider ?? throw new ArgumentNullException(nameof(chatProvider));
@@ -55,19 +55,19 @@ Be concise and focus on actionable corrections.";
     {
         ArgumentNullException.ThrowIfNull(toolResult);
 
-        // Do not reflect on success
+        // 不对成功结果进行反思
         if (toolResult.Success)
         {
             return Task.FromResult(false);
         }
 
-        // Do not reflect if max attempts reached
+        // 如果已达到最大重试次数，则不进行反思
         if (attemptCount >= _config.MaxRetryAttempts)
         {
             return Task.FromResult(false);
         }
 
-        // Do not reflect if token budget exceeded
+        // 如果 token 预算已超出，则不进行反思
         if (_totalTokensUsed >= _tokenBudget)
         {
             return Task.FromResult(false);
@@ -77,7 +77,7 @@ Be concise and focus on actionable corrections.";
     }
 
     /// <summary>
-    /// Minimum tokens required for a meaningful reflection.
+    /// 有意义的反思所需的最少 token 数量。
     /// </summary>
     private const int MinReflectionTokens = 100;
 
@@ -86,7 +86,7 @@ Be concise and focus on actionable corrections.";
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        // Check if cancellation is already requested
+        // 检查是否已请求取消
         if (cancellationToken.IsCancellationRequested)
         {
             return new ReflectionResult
@@ -97,7 +97,7 @@ Be concise and focus on actionable corrections.";
             };
         }
 
-        // Check token budget before making LLM call
+        // 在进行 LLM 调用前检查 token 预算
         var remainingBudget = _tokenBudget - _totalTokensUsed;
         if (remainingBudget <= 0 || remainingBudget < MinReflectionTokens)
         {
@@ -141,14 +141,14 @@ Be concise and focus on actionable corrections.";
                 }
             }
 
-            // Update token usage
+            // 更新 token 使用量
             if (inputTokens.HasValue && outputTokens.HasValue)
             {
                 _totalTokensUsed += inputTokens.Value + outputTokens.Value;
             }
             else
             {
-                // Estimate tokens if usage not provided (rough estimate: 4 chars per token)
+                // 如果未提供使用量，则估算 token（粗略估算：每 token 4 个字符）
                 _totalTokensUsed += (userPrompt.Length + responseBuilder.Length) / 4;
             }
 
@@ -176,7 +176,7 @@ Be concise and focus on actionable corrections.";
     }
 
     /// <summary>
-    /// Builds the reflection prompt from the context.
+    /// 构建反思提示。
     /// </summary>
     private static string BuildReflectionPrompt(ReflectionContext context)
     {
@@ -193,7 +193,7 @@ Be concise and focus on actionable corrections.";
     }
 
     /// <summary>
-    /// Parses the LLM response into a ReflectionResult.
+    /// 将 LLM 响应解析为 ReflectionResult。
     /// </summary>
     private ReflectionResult ParseReflectionResult(string response, int attemptNumber)
     {
@@ -230,7 +230,7 @@ Be concise and focus on actionable corrections.";
                 var shouldRetry = root.TryGetProperty("shouldRetry", out var shouldRetryElement) &&
                                   shouldRetryElement.GetBoolean();
 
-                // Override shouldRetry if max attempts reached
+                // 如果已达到最大重试次数，则覆盖 shouldRetry
                 if (attemptNumber >= _config.MaxRetryAttempts)
                 {
                     shouldRetry = false;
@@ -246,10 +246,10 @@ Be concise and focus on actionable corrections.";
         }
         catch (JsonException)
         {
-            // Fall through to default parsing
+            // 继续执行默认解析
         }
 
-        // Fallback: use the response as analysis
+        // 回退：将响应作为分析结果
         return new ReflectionResult
         {
             Analysis = response,
@@ -259,7 +259,7 @@ Be concise and focus on actionable corrections.";
     }
 
     /// <summary>
-    /// Resets the token usage counter.
+    /// 重置 token 使用量计数器。
     /// </summary>
     public void ResetTokenUsage()
     {
@@ -267,12 +267,12 @@ Be concise and focus on actionable corrections.";
     }
 
     /// <summary>
-    /// Gets the current token usage for reflection.
+    /// 获取当前反思的 token 使用量。
     /// </summary>
     public int TokenUsage => _totalTokensUsed;
 
     /// <summary>
-    /// Gets the token budget for reflection.
+    /// 获取反思的 token 预算。
     /// </summary>
     public int TokenBudget => _tokenBudget;
 }

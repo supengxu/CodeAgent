@@ -7,6 +7,7 @@ public class AgentConfig
     public PlanningConfig Planning { get; set; } = new();
     public ProviderConfig Provider { get; set; } = new();
     public SessionConfig Session { get; set; } = new();
+    public ContextConfig Context { get; set; } = new();
 }
 
 public class ChatConfig

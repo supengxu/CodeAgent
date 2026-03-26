@@ -90,7 +90,7 @@ public class AgentLoop : IAgentLoop
         if (string.IsNullOrWhiteSpace(message))
             throw new ArgumentException("Message cannot be empty", nameof(message));
 
-        await _messageHandler.CreateUserMessageAsync(message);
+        await _messageHandler.CreateUserMessageAsync(message, cancellationToken);
 
         var startTime = DateTime.Now;
         var totalInputTokens = 0;
@@ -244,7 +244,7 @@ public class AgentLoop : IAgentLoop
         if (_layoutRenderer != null)
         {
             var multiLineInput = new MultiLineInput("> ");
-            _layoutRenderer.RenderInput("输入 (Ctrl+Enter 提交):", multiLineInput);
+            _layoutRenderer.RenderInput("输入 (Enter 提交):", multiLineInput);
 
             try
             {

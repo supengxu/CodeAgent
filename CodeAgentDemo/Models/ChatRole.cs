@@ -1,27 +1,27 @@
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Represents the role of a message sender in the conversation.
+/// 表示消息发送者在对话中的角色。
 /// </summary>
 public enum ChatRole
 {
     /// <summary>
-    /// System role for providing instructions and context.
+    /// 系统角色，用于提供指令和上下文。
     /// </summary>
     System,
 
     /// <summary>
-    /// User role for human input.
+    /// 用户角色，用于人类输入。
     /// </summary>
     User,
 
     /// <summary>
-    /// Assistant role for AI responses.
+    /// 助手角色，用于 AI 响应。
     /// </summary>
     Assistant,
 
     /// <summary>
-    /// Tool role for tool execution results.
+    /// 工具角色，用于工具执行结果。
     /// </summary>
     Tool
 }

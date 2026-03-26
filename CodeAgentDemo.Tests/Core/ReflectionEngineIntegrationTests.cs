@@ -13,8 +13,8 @@ using CodeAgentDemo.Tests;
 namespace CodeAgentDemo.Tests.Core;
 
 /// <summary>
-/// Integration tests for ReflectionEngine with AgentLoop.
-/// Tests the end-to-end flow of tool failure -> reflection -> retry.
+/// ReflectionEngine 与 AgentLoop 的集成测试。
+/// 测试工具失败 -> 反思 -> 重试的端到端流程。
 /// </summary>
 public class ReflectionEngineIntegrationTests
 {
@@ -33,25 +33,25 @@ public class ReflectionEngineIntegrationTests
         _sessionCli = new SessionCli(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
     }
 
-    #region Tool Failure Triggers Reflection Tests
+    #region 工具失败触发反思测试
 
     [Fact(Skip = "AgentLoop reflection integration not yet implemented")]
     public async Task ToolFailure_ShouldTriggerReflection_WhenReflectionEngineIsEnabled()
     {
-        // Arrange
+        // 准备
         var toolMock = CreateFailingTool("test_tool", "Tool execution failed");
         _tools.Register(toolMock.Object);
 
         var reflectionEngine = CreateReflectionEngine(shouldRetry: false);
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine.Object);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert
+        // 断言
         reflectionEngine.Verify(
             r => r.ShouldReflectAsync(It.IsAny<ToolResult>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce());
@@ -60,20 +60,20 @@ public class ReflectionEngineIntegrationTests
     [Fact]
     public async Task ToolSuccess_ShouldNotTriggerReflection()
     {
-        // Arrange
+        // 准备
         var toolMock = CreateSuccessfulTool("test_tool", "Success");
         _tools.Register(toolMock.Object);
 
         var reflectionEngine = CreateReflectionEngine(shouldRetry: false);
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine.Object);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - ShouldReflectAsync should not be called for successful tool execution
+        // 断言 - 成功的工具执行不应调用 ShouldReflectAsync
         reflectionEngine.Verify(
             r => r.ShouldReflectAsync(It.IsAny<ToolResult>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never());
@@ -81,12 +81,12 @@ public class ReflectionEngineIntegrationTests
 
     #endregion
 
-    #region Reflection and Retry Success Tests
+    #region 反思和重试成功测试
 
     [Fact(Skip = "AgentLoop reflection integration not yet implemented")]
     public async Task Reflection_ShouldRetry_WhenShouldRetryIsTrue()
     {
-        // Arrange
+        // 准备
         var callCount = 0;
         var toolMock = new Mock<ITool>();
         toolMock.SetupGet(t => t.Name).Returns("test_tool");
@@ -103,13 +103,13 @@ public class ReflectionEngineIntegrationTests
         var reflectionEngine = CreateReflectionEngine(shouldRetry: true);
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine.Object);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - Tool should be called twice (initial + retry)
+        // 断言 - 工具应被调用两次（初始调用 + 重试）
         toolMock.Verify(
             t => t.ExecuteAsync(It.IsAny<JsonElement>(), It.IsAny<CancellationToken>()),
             Times.AtLeast(2));
@@ -118,20 +118,20 @@ public class ReflectionEngineIntegrationTests
     [Fact]
     public async Task Reflection_ShouldNotRetry_WhenShouldRetryIsFalse()
     {
-        // Arrange
+        // 准备
         var toolMock = CreateFailingTool("test_tool", "Tool execution failed");
         _tools.Register(toolMock.Object);
 
         var reflectionEngine = CreateReflectionEngine(shouldRetry: false);
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine.Object);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - Tool should be called only once (no retry)
+        // 断言 - 工具应只被调用一次（无重试）
         toolMock.Verify(
             t => t.ExecuteAsync(It.IsAny<JsonElement>(), It.IsAny<CancellationToken>()),
             Times.Once());
@@ -139,25 +139,25 @@ public class ReflectionEngineIntegrationTests
 
     #endregion
 
-    #region Max Retry Limit Tests
+    #region 最大重试次数限制测试
 
     [Fact]
     public async Task MaxRetryLimit_ShouldStopAfterMaxAttempts()
     {
-        // Arrange
+        // 准备
         var toolMock = CreateFailingTool("test_tool", "Always fails");
         _tools.Register(toolMock.Object);
 
         var reflectionEngine = CreateReflectionEngine(shouldRetry: true);
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine.Object);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - Tool should be called at most 3 times (max attempts)
+        // 断言 - 工具应最多被调用 3 次（最大重试次数）
         toolMock.Verify(
             t => t.ExecuteAsync(It.IsAny<JsonElement>(), It.IsAny<CancellationToken>()),
             Times.AtMost(3));
@@ -166,7 +166,7 @@ public class ReflectionEngineIntegrationTests
     [Fact]
     public async Task MaxRetryLimit_ShouldNotExceedThreeAttempts()
     {
-        // Arrange
+        // 准备
         var executionCount = 0;
         var toolMock = new Mock<ITool>();
         toolMock.SetupGet(t => t.Name).Returns("test_tool");
@@ -181,24 +181,24 @@ public class ReflectionEngineIntegrationTests
         var reflectionEngine = CreateReflectionEngine(shouldRetry: true);
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine.Object);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - Should not exceed 3 attempts
+        // 断言 - 不应超过 3 次尝试
         executionCount.Should().BeLessThanOrEqualTo(3);
     }
 
     [Fact]
     public async Task ShouldReflectAsync_ShouldReturnFalse_WhenMaxAttemptsReached()
     {
-        // Arrange
+        // 准备
         var engine = new ReflectionEngine(_chatProviderMock.Object, _reflectionConfig, 100000);
         var failedResult = new ToolResult(false, "Error");
 
-        // Act & Assert
+        // 执行并断言
         (await engine.ShouldReflectAsync(failedResult, 3)).Should().BeFalse();
         (await engine.ShouldReflectAsync(failedResult, 4)).Should().BeFalse();
         (await engine.ShouldReflectAsync(failedResult, 5)).Should().BeFalse();
@@ -206,41 +206,41 @@ public class ReflectionEngineIntegrationTests
 
     #endregion
 
-    #region Token Budget Tests
+    #region Token 预算测试
 
     [Fact]
     public void ReflectionEngine_ShouldUseTwentyPercentOfTotalBudget()
     {
-        // Arrange
+        // 准备
         var totalBudget = 100000;
-        var expectedReflectionBudget = 20000; // 20% of 100000
+        var expectedReflectionBudget = 20000; // 100000 的 20%
 
-        // Act
+        // 执行
         var engine = new ReflectionEngine(_chatProviderMock.Object, _reflectionConfig, totalBudget);
 
-        // Assert
+        // 断言
         engine.TokenBudget.Should().Be(expectedReflectionBudget);
     }
 
     [Fact]
     public void ReflectionEngine_ShouldRespectCustomTokenBudgetRatio()
     {
-        // Arrange
+        // 准备
         var totalBudget = 100000;
         var customConfig = new ReflectionConfig { TokenBudgetRatio = 0.3 }; // 30%
         var expectedReflectionBudget = 30000;
 
-        // Act
+        // 执行
         var engine = new ReflectionEngine(_chatProviderMock.Object, customConfig, totalBudget);
 
-        // Assert
+        // 断言
         engine.TokenBudget.Should().Be(expectedReflectionBudget);
     }
 
     [Fact]
     public async Task Reflection_ShouldStop_WhenTokenBudgetExceeded()
     {
-        // Arrange - Create engine with very small budget
+        // 准备 - Create engine with very small budget
         var smallBudget = 10; // Very small budget
         var engine = new ReflectionEngine(_chatProviderMock.Object, _reflectionConfig, smallBudget);
         var context = new ReflectionContext
@@ -251,10 +251,10 @@ public class ReflectionEngineIntegrationTests
             AttemptNumber = 1
         };
 
-        // Act
+        // 执行
         var result = await engine.ReflectAsync(context);
 
-        // Assert - Should return without retry due to budget exceeded
+        // 断言 - Should return without retry due to budget exceeded
         result.ShouldRetry.Should().BeFalse();
         result.Analysis.Should().Contain("Token budget exceeded");
     }
@@ -262,7 +262,7 @@ public class ReflectionEngineIntegrationTests
     [Fact]
     public async Task ShouldReflectAsync_ShouldReturnFalse_WhenTokenBudgetExceeded()
     {
-        // Arrange - Create engine with budget that will be exceeded
+        // 准备 - Create engine with budget that will be exceeded
         var engine = new ReflectionEngine(_chatProviderMock.Object, _reflectionConfig, 600);
         var failedResult = new ToolResult(false, "Error");
 
@@ -279,17 +279,17 @@ public class ReflectionEngineIntegrationTests
         // Use up the budget
         await engine.ReflectAsync(context);
 
-        // Act - Now budget should be exceeded
+        // 执行 - Now budget should be exceeded
         var shouldReflect = await engine.ShouldReflectAsync(failedResult, 1);
 
-        // Assert
+        // 断言
         shouldReflect.Should().BeFalse();
     }
 
     [Fact]
     public async Task ReflectionEngine_ShouldTrackTokenUsage()
     {
-        // Arrange
+        // 准备
         var engine = new ReflectionEngine(_chatProviderMock.Object, _reflectionConfig, 100000);
         SetupChatProviderResponse(@"{""analysis"": ""Test analysis"", ""suggestions"": [], ""shouldRetry"": true}");
         var context = new ReflectionContext
@@ -300,12 +300,12 @@ public class ReflectionEngineIntegrationTests
             AttemptNumber = 1
         };
 
-        // Act
+        // 执行
         var initialUsage = engine.TokenUsage;
         await engine.ReflectAsync(context);
         var finalUsage = engine.TokenUsage;
 
-        // Assert
+        // 断言
         initialUsage.Should().Be(0);
         finalUsage.Should().BeGreaterThan(0);
     }
@@ -313,24 +313,24 @@ public class ReflectionEngineIntegrationTests
     [Fact]
     public void ResetTokenUsage_ShouldResetTokenCounter()
     {
-        // Arrange
+        // 准备
         var engine = new ReflectionEngine(_chatProviderMock.Object, _reflectionConfig, 100000);
 
-        // Act
+        // 执行
         engine.ResetTokenUsage();
 
-        // Assert
+        // 断言
         engine.TokenUsage.Should().Be(0);
     }
 
     #endregion
 
-    #region End-to-End Integration Tests
+    #region 端到端集成测试
 
     [Fact(Skip = "AgentLoop reflection integration not yet implemented")]
     public async Task FullIntegration_FailureReflectionRetrySuccess_ShouldWork()
     {
-        // Arrange
+        // 准备
         var callCount = 0;
         var toolMock = new Mock<ITool>();
         toolMock.SetupGet(t => t.Name).Returns("test_tool");
@@ -350,20 +350,20 @@ public class ReflectionEngineIntegrationTests
 
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - Tool should succeed after retry
+        // 断言 - Tool should succeed after retry
         callCount.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
     public async Task FullIntegration_MaxRetriesReached_ShouldReturnFailure()
     {
-        // Arrange
+        // 准备
         var toolMock = CreateFailingTool("test_tool", "Always fails");
         _tools.Register(toolMock.Object);
 
@@ -372,13 +372,13 @@ public class ReflectionEngineIntegrationTests
 
         var loop = CreateAgentLoop(reflectionEngine: reflectionEngine);
 
-        // Setup provider to return tool call
+        // 设置提供者返回工具调用
         SetupProviderWithToolCall("test_tool", "{}");
 
-        // Act
+        // 执行
         var result = await loop.SendMessageAsync("Test message");
 
-        // Assert - Tool should be called max 3 times
+        // 断言 - Tool should be called max 3 times
         toolMock.Verify(
             t => t.ExecuteAsync(It.IsAny<JsonElement>(), It.IsAny<CancellationToken>()),
             Times.AtMost(3));
@@ -386,7 +386,7 @@ public class ReflectionEngineIntegrationTests
 
     #endregion
 
-    #region Helper Methods
+    #region 辅助方法
 
     private Mock<ITool> CreateFailingTool(string name, string errorMessage)
     {

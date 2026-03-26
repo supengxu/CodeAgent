@@ -18,7 +18,7 @@ public class InputHistory
         }
 
         _history.Add(input);
-        _currentIndex = _history.Count; // Position "after end" = no history item displayed
+        _currentIndex = _history.Count; // 定位在"末尾"之后 = 不显示历史项
     }
 
     public string? Previous()
@@ -28,7 +28,7 @@ public class InputHistory
             return null;
         }
 
-        // If at end, start from most recent (last index)
+        // 如果在末尾，从最近的历史项开始（最后一个索引）
         if (_currentIndex >= _history.Count)
         {
             _currentIndex = _history.Count - 1;
@@ -48,20 +48,20 @@ public class InputHistory
             return null;
         }
 
-        // If at end, just return null (nothing more to show)
+        // 如果在末尾，直接返回 null（没有更多内容显示）
         if (_currentIndex >= _history.Count)
         {
             return null;
         }
 
-        // Move forward in history
+        // 在历史记录中向前移动
         if (_currentIndex < _history.Count - 1)
         {
             _currentIndex++;
             return _history[_currentIndex];
         }
 
-        // At the last item, move to "after end" position
+        // 在最后一项，移动到"末尾"之后的位置
         _currentIndex = _history.Count;
         return null;
     }

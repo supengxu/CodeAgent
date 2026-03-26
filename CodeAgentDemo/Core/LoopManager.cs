@@ -3,7 +3,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of loop manager that delegates to LoopController and adds stop reason determination.
+/// 循环管理器的实现类，委托给 LoopController 并添加停止原因确定。
 /// </summary>
 public class LoopManager : ILoopManager
 {
@@ -14,10 +14,10 @@ public class LoopManager : ILoopManager
     public LoopState State => _loopController.State;
 
     /// <summary>
-    /// Initializes a new instance of the LoopManager class.
+    /// 初始化 LoopManager 类的新实例。
     /// </summary>
-    /// <param name="loopController">The loop controller for iteration management.</param>
-    /// <param name="ui">The console UI for warnings.</param>
+    /// <param name="loopController">用于迭代管理的循环控制器。</param>
+    /// <param name="ui">用于警告的控制台 UI。</param>
     public LoopManager(ILoopController loopController, IConsoleUI ui)
     {
         _loopController = loopController ?? throw new ArgumentNullException(nameof(loopController));

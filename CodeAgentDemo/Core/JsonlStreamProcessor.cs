@@ -5,8 +5,8 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Provides streaming JSONL processing to handle large session files efficiently.
-/// Processes each line as a separate JSON object without loading the entire file into memory.
+/// 提供流式 JSONL 处理以高效处理大型会话文件。
+/// 将每行作为单独的 JSON 对象处理，无需将整个文件加载到内存中。
 /// </summary>
 public sealed class JsonlStreamProcessor
 {
@@ -21,18 +21,18 @@ public sealed class JsonlStreamProcessor
             AllowTrailingCommas = true
         };
 
-        // Add the ContentBlock polymorphic converter
+        // 添加 ContentBlock 多态转换器
         _jsonOptions.Converters.Add(new ContentBlockJsonConverterFactory());
     }
 
     /// <summary>
-    /// Asynchronously reads and processes each JSON line in the specified file.
-    /// Useful for large files where loading everything into memory isn't feasible.
+    /// 异步读取并处理指定文件中的每个 JSON 行。
+    /// 适用于无法将所有内容加载到内存的大型文件。
     /// </summary>
-    /// <param name="filePath">Path to the JSONL file</param>
-    /// <param name="processor">Function to process each loaded message</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task representing the completion of the operation</returns>
+    /// <param name="filePath">JSONL 文件的路径</param>
+    /// <param name="processor">处理每条加载消息的函数</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示操作完成的 Task</returns>
     public async Task ProcessJsonlFileAsync(
         string filePath,
         Func<ChatMessage, Task<bool>> processor,
@@ -48,7 +48,7 @@ public sealed class JsonlStreamProcessor
             FileMode.Open,
             FileAccess.Read,
             FileShare.ReadWrite,
-            bufferSize: 8192, // Larger buffer for better sequential throughput
+            bufferSize: 8192, // 较大的缓冲区以获得更好的顺序吞吐量
             useAsync: true);
 
         using var reader = new StreamReader(fileStream);
@@ -70,7 +70,7 @@ public sealed class JsonlStreamProcessor
                 var message = JsonSerializer.Deserialize<ChatMessage>(line, _jsonOptions);
                 if (message != null)
                 {
-                    // Stop processing if the processor returns false
+                    // 如果处理函数返回 false，则停止处理
                     if (!await processor(message))
                     {
                         break;
@@ -79,7 +79,7 @@ public sealed class JsonlStreamProcessor
             }
             catch (JsonException ex)
             {
-                // Log error but continue processing other lines
+                // 记录错误但继续处理其他行
                 OnCriticalLineError(filePath, lineNumber, line, ex);
                 continue;
             }
@@ -87,12 +87,12 @@ public sealed class JsonlStreamProcessor
     }
 
     /// <summary>
-    /// Asynchronously parses JSONL lines from a stream instead of a file.
+    /// 异步从流中解析 JSONL 行，而不是从文件。
     /// </summary>
-    /// <param name="stream">Stream containing JSONL data</param>
-    /// <param name="processor">Function to process each loaded message</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Task representing the completion of the operation</returns>
+    /// <param name="stream">包含 JSONL 数据的流</param>
+    /// <param name="processor">处理每条加载消息的函数</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示操作完成的 Task</returns>
     public async Task ProcessJsonlStreamAsync(
         Stream stream,
         Func<ChatMessage, Task<bool>> processor,
@@ -117,7 +117,7 @@ public sealed class JsonlStreamProcessor
                 var message = JsonSerializer.Deserialize<ChatMessage>(line, _jsonOptions);
                 if (message != null)
                 {
-                    // Stop processing if the processor returns false
+                    // 如果处理函数返回 false，则停止处理
                     if (!await processor(message))
                     {
                         break;
@@ -126,7 +126,7 @@ public sealed class JsonlStreamProcessor
             }
             catch (JsonException ex)
             {
-                // Log error but continue processing other lines
+                // 记录错误但继续处理其他行
                 OnCriticalLineError("[stream]", lineNumber, line, ex);
                 continue;
             }
@@ -134,19 +134,19 @@ public sealed class JsonlStreamProcessor
     }
 
     /// <summary>
-    /// Reads lines from a JSONL file asynchronously as an IAsyncEnumerable.
-    /// Enables lazy processing and reduced memory usage for very large files.
+    /// 异步从 JSONL 文件读取行作为 IAsyncEnumerable。
+    /// 支持惰性处理并减少大型文件的内存使用。
     /// </summary>
-    /// <param name="filePath">Path to the JSONL file</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>IAsyncEnumerable of ChatMessage</returns>
+    /// <param name="filePath">JSONL 文件的路径</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>ChatMessage 的 IAsyncEnumerable</returns>
     public async IAsyncEnumerable<ChatMessage> ReadJsonlFileAsync(
         string filePath,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (!File.Exists(filePath))
         {
-            yield break; // Don't throw, just return an empty enumeration
+            yield break; // 不抛出异常，只返回空枚举
         }
 
         using var fileStream = new FileStream(
@@ -185,7 +185,7 @@ public sealed class JsonlStreamProcessor
             if (exception != null)
             {
                 OnCriticalLineError(filePath, lineNumber, line, exception);
-                continue; // Skip erroneous lines and continue processing
+                continue; // 跳过错误的行并继续处理
             }
 
             if (message != null)
@@ -196,11 +196,11 @@ public sealed class JsonlStreamProcessor
     }
 
     /// <summary>
-    /// Appends a new entry to the JSONL file asynchronously.
+    /// 异步向 JSONL 文件追加新条目。
     /// </summary>
-    /// <param name="filePath">Path to JSONL file</param>
-    /// <param name="chatMessage">Message to append</param>
-    /// <param name="cancellationToken">Cancellation token</param>
+    /// <param name="filePath">JSONL 文件的路径</param>
+    /// <param name="chatMessage">要追加的消息</param>
+    /// <param name="cancellationToken">取消令牌</param>
     public async Task AppendAsync(string filePath, ChatMessage chatMessage, CancellationToken cancellationToken = default)
     {
         var directory = Path.GetDirectoryName(filePath);
@@ -211,7 +211,7 @@ public sealed class JsonlStreamProcessor
 
         var jsonLine = JsonSerializer.Serialize(chatMessage, _jsonOptions);
 
-        // File.AppendText uses UTF8 encoding by default and handles line ending properly
+        // File.AppendText 默认使用 UTF8 编码并正确处理换行符
         using var fileStream = new FileStream(
             filePath,
             FileMode.Append,
@@ -222,7 +222,7 @@ public sealed class JsonlStreamProcessor
 
         using var writer = new StreamWriter(fileStream);
         await writer.WriteLineAsync(jsonLine);
-        await writer.FlushAsync(); // Ensure data is physically written
+        await writer.FlushAsync(); // 确保数据被实际写入
     }
 
     private void OnCriticalLineError(string fileOrStream, int lineNumber, string content, JsonException ex)

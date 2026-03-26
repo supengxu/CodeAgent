@@ -3,42 +3,42 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Manages the agent loop iteration control including limits and cycle detection.
+/// 管理 Agent 循环迭代控制的接口，包括限制和循环检测。
 /// </summary>
 public interface ILoopManager
 {
     /// <summary>
-    /// Checks if the loop can continue to the next iteration.
+    /// 检查循环是否可以继续到下一次迭代。
     /// </summary>
     Task<bool> CanContinueAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Detects if a cycle exists in the given state hash.
+    /// 检测给定状态哈希是否存在循环。
     /// </summary>
     bool DetectCycle(string stateHash);
 
     /// <summary>
-    /// Gets the state hash for the given state data.
+    /// 获取给定状态数据的哈希值。
     /// </summary>
     string GetStateHash(string stateData);
 
     /// <summary>
-    /// Updates the token usage counter.
+    /// 更新 token 使用计数器。
     /// </summary>
     void UpdateTokenUsage(int totalTokens);
 
     /// <summary>
-    /// Resets the loop state for a new iteration cycle.
+    /// 重置循环状态以开始新的迭代周期。
     /// </summary>
     void Reset();
 
     /// <summary>
-    /// Gets the current loop state.
+    /// 获取当前循环状态。
     /// </summary>
     LoopState State { get; }
 
     /// <summary>
-    /// Determines the stop reason based on current state.
+    /// 根据当前状态确定停止原因。
     /// </summary>
     string DetermineStopReason();
 }

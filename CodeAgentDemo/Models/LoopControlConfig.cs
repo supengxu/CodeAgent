@@ -1,25 +1,25 @@
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Configuration for loop control mechanisms.
+/// 循环控制机制的配置。
 /// </summary>
 public class LoopControlConfig
 {
     /// <summary>
-    /// Maximum number of iterations allowed in the agent loop.
-    /// Default is 15.
+    /// 代理循环中允许的最大迭代次数。
+    /// 默认值为 15。
     /// </summary>
     public int MaxIterations { get; set; } = 15;
 
     /// <summary>
-    /// Token usage ratio threshold (0.0 to 1.0) that triggers a warning.
-    /// Default is 0.8 (80% of context window).
+    /// 令牌使用比例阈值（0.0 到 1.0），超过该值会触发警告。
+    /// 默认值为 0.8（上下文窗口的 80%）。
     /// </summary>
     public double TokenLimitRatio { get; set; } = 0.8;
 
     /// <summary>
-    /// Number of recent states to keep for cycle detection.
-    /// Default is 5.
+    /// 用于循环检测的最近状态数量。
+    /// 默认值为 5。
     /// </summary>
     public int CycleDetectionWindow { get; set; } = 5;
 }

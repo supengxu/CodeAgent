@@ -5,51 +5,51 @@ using CodeAgentDemo.Tools;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Interface for reflection engine that analyzes failures and generates correction suggestions.
-/// Reflection is triggered only on failure, not on success.
+/// 反思引擎的接口，用于分析失败并生成纠正建议。
+/// 反思仅在失败时触发，成功时不会触发。
 /// </summary>
 public interface IReflectionEngine
 {
     /// <summary>
-    /// Determines whether reflection should be triggered based on the execution result.
+    /// 根据执行结果确定是否应该触发反思。
     /// </summary>
-    /// <param name="toolResult">The result of the tool execution.</param>
-    /// <param name="attemptCount">Current attempt count (starts at 1).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if reflection should be triggered, false otherwise.</returns>
+    /// <param name="toolResult">工具执行结果。</param>
+    /// <param name="attemptCount">当前尝试次数（从 1 开始）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>如果应该触发反思则返回 true，否则返回 false。</returns>
     Task<bool> ShouldReflectAsync(ToolResult toolResult, int attemptCount, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Performs reflection on a failed execution and generates suggestions.
+    /// 对失败的执行进行反思并生成建议。
     /// </summary>
-    /// <param name="context">Context information about the failure (tool name, arguments, error message).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Reflection result containing analysis and suggestions.</returns>
+    /// <param name="context">关于失败上下文的信息（工具名称、参数、错误消息）。</param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>包含分析和建议的反思结果。</returns>
     Task<ReflectionResult> ReflectAsync(ReflectionContext context, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Context for reflection containing information about the failed execution.
+/// 包含失败执行相关信息的反思上下文。
 /// </summary>
 public record ReflectionContext
 {
     /// <summary>
-    /// Name of the tool that failed.
+    /// 失败工具的名称。
     /// </summary>
     public string ToolName { get; init; } = string.Empty;
 
     /// <summary>
-    /// Arguments passed to the tool.
+    /// 传递给工具的参数。
     /// </summary>
     public JsonElement Arguments { get; init; }
 
     /// <summary>
-    /// Error message from the failed execution.
+    /// 失败执行的错误消息。
     /// </summary>
     public string ErrorMessage { get; init; } = string.Empty;
 
     /// <summary>
-    /// Current attempt number.
+    /// 当前尝试次数。
     /// </summary>
     public int AttemptNumber { get; init; }
 }

@@ -62,7 +62,7 @@ public class SessionCli : ISessionCli
             await CreateNewSessionAsync(null);
         }
 
-        // Ensure session file path is properly initialized
+        // 确保会话文件路径已正确初始化
         if (string.IsNullOrEmpty(_currentSessionFilePath))
         {
             throw new InvalidOperationException("Failed to initialize session: session file path is empty");

@@ -6,17 +6,17 @@ using CodeAgentDemo.Providers;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of task planning engine that assesses task complexity and generates execution plans.
+/// 任务规划引擎的实现，用于评估任务复杂度并生成执行计划。
 /// </summary>
 public class PlanningEngine : IPlanningEngine
 {
     private readonly IChatProvider _provider;
     private readonly PlanningConfig _config;
 
-    // Rough estimate: ~4 characters per token on average
+    // 粗略估算：平均每 token 约 4 个字符
     private const int CharsPerToken = 4;
 
-    // Keywords that suggest tool usage
+    // 暗示工具使用的关键词
     private static readonly string[] ToolKeywords = new[]
     {
         "read", "write", "edit", "create", "delete", "search", "find",
@@ -24,10 +24,10 @@ public class PlanningEngine : IPlanningEngine
     };
 
     /// <summary>
-    /// Initializes a new instance of the PlanningEngine class.
+    /// 初始化 PlanningEngine 类的新实例。
     /// </summary>
-    /// <param name="provider">The chat provider for LLM calls.</param>
-    /// <param name="config">Planning configuration options.</param>
+    /// <param name="provider">用于 LLM 调用的聊天提供商。</param>
+    /// <param name="config">规划配置选项。</param>
     public PlanningEngine(IChatProvider provider, PlanningConfig config)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
@@ -39,19 +39,19 @@ public class PlanningEngine : IPlanningEngine
     {
         ArgumentNullException.ThrowIfNull(task);
 
-        // Estimate token count from character count
+        // 从字符数估算 token 数量
         int estimatedTokens = EstimateTokens(task);
 
-        // Check if estimated tokens exceed threshold
+        // 检查估算的 token 数量是否超过阈值
         if (estimatedTokens > _config.ComplexityThreshold)
         {
             return Task.FromResult(ComplexityLevel.Complex);
         }
 
-        // Estimate expected tool calls from keywords
+        // 从关键词估算预期的工具调用次数
         int estimatedToolCalls = EstimateToolCalls(task);
 
-        // Check if estimated tool calls exceed minimum for complexity
+        // 检查估算的工具调用次数是否超过复杂任务的最低要求
         if (estimatedToolCalls >= _config.MinToolCallsForComplex)
         {
             return Task.FromResult(ComplexityLevel.Complex);
@@ -76,7 +76,18 @@ public class PlanningEngine : IPlanningEngine
         }
         catch (OperationCanceledException) when (timeoutSource.Token.IsCancellationRequested)
         {
-            // Timeout occurred - return a simple plan with the original task
+            // 超时发生 - 返回包含原始任务的简单计划
+            return new TaskPlan
+            {
+                OriginalTask = task,
+                Steps = new List<string> { task },
+                Complexity = ComplexityLevel.Simple
+            };
+        }
+        catch (Exception ex)
+        {
+            JsonSerializer.Serialize(ex);
+            // 其他异常发生 - 捕获并返回包含原始任务的简单计划
             return new TaskPlan
             {
                 OriginalTask = task,
@@ -161,7 +172,7 @@ Do not include any explanation, reasoning, or additional text. Only output the n
                 continue;
             }
 
-            // Try to extract step content from numbered list format
+            // 尝试从编号列表格式中提取步骤内容
             var step = ExtractStepContent(trimmedLine);
             if (!string.IsNullOrWhiteSpace(step))
             {
@@ -169,7 +180,7 @@ Do not include any explanation, reasoning, or additional text. Only output the n
             }
         }
 
-        // If no steps were parsed, use the entire response as a single step
+        // 如果没有解析出步骤，则将整个响应作为单个步骤
         if (steps.Count == 0 && !string.IsNullOrWhiteSpace(responseText))
         {
             steps.Add(responseText.Trim());
@@ -180,7 +191,7 @@ Do not include any explanation, reasoning, or additional text. Only output the n
 
     private static string? ExtractStepContent(string line)
     {
-        // Match patterns like "1. Step", "1) Step", "1- Step", "1 Step"
+        // 匹配如 "1. Step"、"1) Step"、"1- Step"、"1 Step" 这样的模式
         for (int i = 0; i < line.Length; i++)
         {
             if (char.IsDigit(line[i]))
@@ -188,7 +199,7 @@ Do not include any explanation, reasoning, or additional text. Only output the n
                 continue;
             }
 
-            // Skip common separators after number
+            // 跳过数字后的常见分隔符
             if (line[i] is '.' or ')' or '-' or ' ')
             {
                 var remaining = line.Substring(i + 1).Trim();
@@ -201,13 +212,13 @@ Do not include any explanation, reasoning, or additional text. Only output the n
             break;
         }
 
-        // If no numbered format detected, return the line as-is
+        // 如果未检测到编号格式，则按原样返回该行
         return line;
     }
 
     private static int EstimateTokens(string text)
     {
-        // Rough estimation: ~4 characters per token on average
+        // 粗略估算：平均每 token 约 4 个字符
         return text.Length / CharsPerToken;
     }
 

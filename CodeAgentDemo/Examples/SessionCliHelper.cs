@@ -3,13 +3,11 @@ using CodeAgentDemo.Core;
 namespace CodeAgentDemo.Examples;
 
 /// <summary>
-/// Command-line helper for session management
-/// </summary>
+/// 命令行会话管理辅助工具。</summary>
 public static class SessionCliHelper
 {
     /// <summary>
-    /// Parses command line arguments to determine session behavior
-    /// </summary>
+    /// 解析命令行参数以确定会话行为。</summary>
     public static async Task<(SessionStore? sessionStore, string sessionFilePath)> ParseSessionArgsAsync(string[] args)
     {
         SessionStore? sessionStore = null;
@@ -32,7 +30,7 @@ public static class SessionCliHelper
             }
         }
 
-        // Initialize sessions directory
+        // 初始化会话目录
         var sessionsDir = Path.Combine(Directory.GetCurrentDirectory(), "sessions");
         Directory.CreateDirectory(sessionsDir);
 
@@ -43,7 +41,7 @@ public static class SessionCliHelper
 
         if (useSession)
         {
-            // Attempt to load existing session
+            // 尝试加载现有会话
             var sessionManager = new SessionManager(sessionsDir);
             var result = sessionId != "latest"
                 ? await sessionManager.LoadSessionAsync(sessionId)
@@ -57,11 +55,11 @@ public static class SessionCliHelper
             }
             else
             {
-                // Session not found, start new one
+                // 未找到会话，创建新的
                 sessionId = sessionId == "latest" ? GenerateNewSessionId() : sessionId;
                 sessionFilePath = Path.Combine(sessionsDir, $"{sessionId}.jsonl");
 
-                // Create a new session and save it
+                // 创建新会话并保存
                 sessionStore = new SessionStore();
                 var persistence = new SessionPersistence();
                 await persistence.SaveSessionAsync(sessionStore, sessionFilePath);
@@ -71,7 +69,7 @@ public static class SessionCliHelper
         }
         else if (!listSessions)
         {
-            // Default behavior: create a new session with timestamped ID
+            // 默认行为：创建带时间戳 ID 的新会话
             var sessionIdStr = GenerateNewSessionId();
             sessionFilePath = Path.Combine(sessionsDir, $"{sessionIdStr}.jsonl");
 
@@ -86,8 +84,7 @@ public static class SessionCliHelper
     }
 
     /// <summary>
-    /// Prints all available sessions
-    /// </summary>
+    /// 打印所有可用的会话。</summary>
     /// <param name="sessionsDir"></param>
     private static Task PrintAvailableSessions(string sessionsDir)
     {

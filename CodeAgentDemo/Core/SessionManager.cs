@@ -4,7 +4,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Manages multiple sessions and provides utilities to list, load, and create sessions.
+/// 管理多个会话并提供列出、加载和创建会话的工具方法。
 /// </summary>
 public class SessionManager
 {
@@ -14,7 +14,7 @@ public class SessionManager
     public SessionManager(string sessionsDirectory = "sessions")
     {
         _sessionsDirectory = sessionsDirectory;
-        Directory.CreateDirectory(_sessionsDirectory); // Ensure directory exists
+        Directory.CreateDirectory(_sessionsDirectory); // 确保目录存在
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -28,13 +28,13 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Gets a list of available session files in the sessions directory
+    /// 获取会话目录中可用的会话文件列表
     /// </summary>
     public List<SessionInfo> ListSessions()
     {
         var sessionFiles = Directory.GetFiles(_sessionsDirectory, "*.jsonl")
             .Select(path => new FileInfo(path))
-            .OrderByDescending(fi => fi.CreationTime) // Most recent first
+            .OrderByDescending(fi => fi.CreationTime) // 最新的优先
             .Select(fi => GetSessionInfo(fi))
             .ToList();
 
@@ -42,17 +42,17 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Creates or gets an empty session store with the specified ID
+    /// 创建或获取具有指定 ID 的空会话存储
     /// </summary>
-    /// <param name="sessionId">Unique identifier for the session (without extension)</param>
-    /// <returns>New SessionStore instance</returns>
+    /// <param name="sessionId">会话的唯一标识符（不带扩展名）</param>
+    /// <returns>新的 SessionStore 实例</returns>
     public Task<(SessionStore store, string filePath)> CreateSessionAsync(string sessionId)
     {
         var filePath = Path.Combine(_sessionsDirectory, $"{sessionId}.jsonl");
 
         var sessionStore = new SessionStore();
 
-        // Ensure the file exists (even if empty)
+        // 确保文件存在（即使为空）
         if (!File.Exists(filePath))
         {
             using var _ = File.Create(filePath);
@@ -62,9 +62,9 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Loads an existing session from the specified ID
+    /// 从指定 ID 加载现有会话
     /// </summary>
-    /// <param name="sessionId">Session ID to load (without extension)</param>
+    /// <param name="sessionId">要加载的会话 ID（不带扩展名）</param>
     public async Task<(SessionStore store, string filePath)?> LoadSessionAsync(string sessionId)
     {
         var filePath = Path.Combine(_sessionsDirectory, $"{sessionId}.jsonl");
@@ -81,7 +81,7 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Loads the most recent session file if any exist
+    /// 如果存在则加载最新的会话文件
     /// </summary>
     public async Task<(SessionStore store, string filePath)?> LoadMostRecentSessionAsync()
     {
@@ -96,9 +96,9 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Deletes a session file
+    /// 删除会话文件
     /// </summary>
-    /// <param name="sessionId">ID of session to delete (without extension)</param>
+    /// <param name="sessionId">要删除的会话 ID（不带扩展名）</param>
     public void DeleteSession(string sessionId)
     {
         var filePath = Path.Combine(_sessionsDirectory, $"{sessionId}.jsonl");
@@ -110,7 +110,7 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Gets metadata information for a session file
+    /// 获取会话文件的元数据信息
     /// </summary>
     private SessionInfo GetSessionInfo(FileInfo fileInfo)
     {
@@ -128,7 +128,7 @@ public class SessionManager
     }
 
     /// <summary>
-    /// Counts the number of messages in a JSONL file by counting lines
+    /// 通过计算行数来统计 JSONL 文件中的消息数量
     /// </summary>
     private int CountMessagesInFile(string filePath)
     {
@@ -140,14 +140,14 @@ public class SessionManager
         }
         catch
         {
-            // If we can't read the file, return 0
+            // 如果无法读取文件，则返回 0
             return 0;
         }
     }
 }
 
 /// <summary>
-/// Information about a session file
+/// 会话文件的信息
 /// </summary>
 public record SessionInfo(
     string SessionId,

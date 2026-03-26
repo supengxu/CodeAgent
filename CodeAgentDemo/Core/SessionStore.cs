@@ -4,19 +4,19 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Manages chat message history for a session, with optional JSONL persistence.
+/// 管理会话的聊天消息历史，支持可选的 JSONL 持久化。
 /// </summary>
 public partial class SessionStore
 {
     private readonly List<ChatMessage> _messages = new();
 
     /// <summary>
-    /// Gets a read-only view of all messages.
+    /// 获取所有消息的只读视图。
     /// </summary>
     public IReadOnlyList<ChatMessage> Messages => new ReadOnlyCollection<ChatMessage>(_messages);
 
     /// <summary>
-    /// Adds a message to the history.
+    /// 向历史记录添加消息。
     /// </summary>
     public void AddMessage(ChatMessage message)
     {
@@ -25,7 +25,7 @@ public partial class SessionStore
     }
 
     /// <summary>
-    /// Creates and adds a text message with the specified role.
+    /// 创建并添加具有指定角色的文本消息。
     /// </summary>
     public void AddMessage(ChatRole role, string text)
     {
@@ -33,7 +33,7 @@ public partial class SessionStore
     }
 
     /// <summary>
-    /// Creates and adds a message with the specified role and content.
+    /// 创建并添加具有指定角色和内容的消息。
     /// </summary>
     public void AddMessage(ChatRole role, IEnumerable<ContentBlock> content)
     {
@@ -41,7 +41,7 @@ public partial class SessionStore
     }
 
     /// <summary>
-    /// Clears all messages from the session.
+    /// 清除会话中的所有消息。
     /// </summary>
     public void Clear()
     {
@@ -49,7 +49,7 @@ public partial class SessionStore
     }
 
     /// <summary>
-    /// Gets the number of messages in the session.
+    /// 获取会话中的消息数量。
     /// </summary>
     public int Count => _messages.Count;
 
@@ -61,7 +61,7 @@ public partial class SessionStore
     }
 
     /// <summary>
-    /// Replaces all messages with a new collection.
+    /// 用新集合替换所有消息。
     /// </summary>
     public void ReplaceMessages(IEnumerable<ChatMessage> newMessages)
     {

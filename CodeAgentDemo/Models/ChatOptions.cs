@@ -3,38 +3,38 @@ using System.Text.Json;
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Configuration options for chat completion.
+/// 聊天补全的配置选项。
 /// </summary>
 public class ChatOptions
 {
     /// <summary>
-    /// System prompt to set the assistant's behavior.
+    /// 设置助手行为的系统提示。
     /// </summary>
     public string? SystemPrompt { get; set; }
 
     /// <summary>
-    /// Maximum tokens for the response.
+    /// 响应的最大令牌数。
     /// </summary>
     public int MaxTokens { get; set; } = 4096;
 
     /// <summary>
-    /// Whether to enable extended thinking mode.
+    /// 是否启用扩展思考模式。
     /// </summary>
     public bool EnableThinking { get; set; }
 
     /// <summary>
-    /// Budget tokens for thinking (if enabled).
+    /// 思考预算令牌数（如果启用）。
     /// </summary>
     public int ThinkingBudgetTokens { get; set; }
 
     /// <summary>
-    /// Available tools for function calling.
+    /// 函数调用的可用工具。
     /// </summary>
     public IEnumerable<ToolDefinition>? Tools { get; set; }
 }
 
 /// <summary>
-/// Definition of a tool for the LLM.
+/// LLM 工具的定义。
 /// </summary>
 public record ToolDefinition(
     string Name,

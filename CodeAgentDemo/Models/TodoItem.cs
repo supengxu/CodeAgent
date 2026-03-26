@@ -1,58 +1,58 @@
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Represents the status of a todo item.
+/// 表示待办事项的状态。
 /// </summary>
 public enum TodoStatus
 {
     /// <summary>
-    /// Task is pending and not yet started.
+    /// 任务待处理，尚未开始。
     /// </summary>
     Pending,
 
     /// <summary>
-    /// Task is currently being worked on.
+    /// 任务正在处理中。
     /// </summary>
     InProgress,
 
     /// <summary>
-    /// Task has been completed.
+    /// 任务已完成。
     /// </summary>
     Completed
 }
 
 /// <summary>
-/// Represents a todo item with status tracking.
+/// 表示带有状态跟踪的待办事项。
 /// </summary>
 public class TodoItem
 {
     /// <summary>
-    /// Gets or sets the unique identifier of the todo item.
+    /// 获取或设置待办事项的唯一标识符。
     /// </summary>
     public required string Id { get; init; }
 
     /// <summary>
-    /// Gets or sets the description of the todo item.
+    /// 获取或设置待办事项的描述。
     /// </summary>
     public required string Text { get; set; }
 
     /// <summary>
-    /// Gets or sets the current status of the todo item.
+    /// 获取或设置待办事项的当前状态。
     /// </summary>
     public TodoStatus Status { get; set; } = TodoStatus.Pending;
 
     /// <summary>
-    /// Gets or sets the priority of the todo item.
+    /// 获取或设置待办事项的优先级。
     /// </summary>
     public string Priority { get; set; } = "medium";
 
     /// <summary>
-    /// Gets or sets the creation timestamp.
+    /// 获取创建时间戳。
     /// </summary>
     public DateTime CreatedAt { get; init; } = DateTime.Now;
 
     /// <summary>
-    /// Gets or sets the last update timestamp.
+    /// 获取或设置最后更新时间戳。
     /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

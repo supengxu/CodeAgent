@@ -4,7 +4,7 @@ using CodeAgentDemo.Tools;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of tool executor with reflection-based retry support.
+/// 工具执行器的实现类，支持基于反思的重试。
 /// </summary>
 public class ToolExecutor : IToolExecutor
 {
@@ -21,12 +21,12 @@ public class ToolExecutor : IToolExecutor
     public int ToolCallCount => _toolCallCount;
 
     /// <summary>
-    /// Initializes a new instance of the ToolExecutor class.
+    /// 初始化 ToolExecutor 类的新实例。
     /// </summary>
-    /// <param name="toolRegistry">The tool registry.</param>
-    /// <param name="ui">The console UI.</param>
-    /// <param name="console">The console IO.</param>
-    /// <param name="reflectionEngine">Optional reflection engine for retry logic.</param>
+    /// <param name="toolRegistry">工具注册表。</param>
+    /// <param name="ui">控制台 UI。</param>
+    /// <param name="console">控制台 IO。</param>
+    /// <param name="reflectionEngine">用于重试逻辑的可选反思引擎。</param>
     public ToolExecutor(
         IToolRegistry toolRegistry,
         IConsoleUI ui,
@@ -149,7 +149,7 @@ public class ToolExecutor : IToolExecutor
         _ui.PrintToolConfirmation(tool.Name);
         _console.Write("    执行? [y/N]: ");
 
-        // Ensure output is flushed before waiting for user input
+        // 确保在等待用户输入前刷新输出
         Console.Out.Flush();
 
         var confirmation = _console.ReadLine();

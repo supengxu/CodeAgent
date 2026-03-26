@@ -4,17 +4,17 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Providers;
 
 /// <summary>
-/// Unified interface for LLM chat providers.
+/// LLM 聊天提供商的统一接口。
 /// </summary>
 public interface IChatProvider
 {
     /// <summary>
-    /// Gets the provider name.
+    /// 获取提供商名称。
     /// </summary>
     string ProviderName { get; }
 
     /// <summary>
-    /// Streams chat completion responses.
+    /// 流式返回聊天完成响应。
     /// </summary>
     IAsyncEnumerable<StreamChunk> CompleteStreamingAsync(
         IEnumerable<ChatMessage> messages,

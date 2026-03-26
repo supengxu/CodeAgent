@@ -77,6 +77,7 @@ try
     });
     services.AddSingleton(agentConfig.LoopControl);
     services.AddSingleton(agentConfig.Planning);
+    services.AddSingleton(agentConfig.Context);
 
     services.AddSingleton<IOpenAIConverter, OpenAIConverter>();
     services.AddSingleton<IChatProvider, OpenAIProvider>();
@@ -85,6 +86,9 @@ try
     services.AddSingleton<IConsoleUI, SpectreConsoleUI>();
     services.AddSingleton<ILayoutRenderer, SplitLayoutRenderer>();
     services.AddSingleton<IConsoleIO, SpectreConsoleIO>();
+    services.AddSingleton<IPlanningEngine, PlanningEngine>();
+    services.AddSingleton<IContextManager, ContextManager>();
+    services.AddSingleton<ITokenCounter, SimpleTokenCounter>();
 
     services.AddSingleton<IMessageHandler, MessageHandler>();
     services.AddSingleton<IToolExecutor, ToolExecutor>();

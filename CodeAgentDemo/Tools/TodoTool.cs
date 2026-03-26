@@ -5,7 +5,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Tools;
 
 /// <summary>
-/// Tool for managing todo items.
+/// 任务管理工具，用于创建、更新和跟踪待办事项。
 /// </summary>
 public class TodoTool(
     TodoManager todoManager) : ITool

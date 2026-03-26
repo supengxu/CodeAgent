@@ -90,11 +90,11 @@ public class MultiLineInputTests
         var input = MultiLineInput.WithInitialText("ABC");
         var key = new ConsoleKeyInfo('\0', ConsoleKey.LeftArrow, false, false, false);
 
-        // Move left twice
+        // 向左移动两次
         input.HandleKey(key);
         input.HandleKey(key);
 
-        // Move right once
+        // 向右移动一次
         var rightKey = new ConsoleKeyInfo('\0', ConsoleKey.RightArrow, false, false, false);
         input.HandleKey(rightKey);
     }

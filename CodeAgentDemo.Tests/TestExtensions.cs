@@ -3,12 +3,12 @@ using System.Runtime.CompilerServices;
 namespace CodeAgentDemo.Tests;
 
 /// <summary>
-/// Extension methods for testing purposes.
+/// 用于测试目的的扩展方法。
 /// </summary>
 internal static class TestExtensions
 {
     /// <summary>
-    /// Converts an IEnumerable to IAsyncEnumerable for testing.
+    /// 将 IEnumerable 转换为 IAsyncEnumerable 用于测试。
     /// </summary>
     public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IEnumerable<T> source)
     {

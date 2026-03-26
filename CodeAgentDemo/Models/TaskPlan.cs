@@ -1,37 +1,37 @@
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Represents a task execution plan with ordered steps.
+/// 表示包含有序步骤的任务执行计划。
 /// </summary>
 public class TaskPlan
 {
     /// <summary>
-    /// Gets or sets the ordered list of steps to execute.
+    /// 获取或设置要执行的有序步骤列表。
     /// </summary>
     public List<string> Steps { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the index of the current step being executed.
+    /// 获取或设置当前正在执行的步骤索引。
     /// </summary>
     public int CurrentStep { get; set; }
 
     /// <summary>
-    /// Gets a value indicating whether all steps have been completed.
+    /// 获取一个值，指示所有步骤是否已完成。
     /// </summary>
     public bool IsComplete => CurrentStep >= Steps.Count;
 
     /// <summary>
-    /// Gets or sets the original task description.
+    /// 获取或设置原始任务描述。
     /// </summary>
     public string? OriginalTask { get; set; }
 
     /// <summary>
-    /// Gets or sets the complexity assessment result.
+    /// 获取或设置复杂度评估结果。
     /// </summary>
     public ComplexityLevel Complexity { get; set; }
 
     /// <summary>
-    /// Advances to the next step in the plan.
+    /// 推进到计划中的下一步。
     /// </summary>
     public void AdvanceStep()
     {
@@ -42,7 +42,7 @@ public class TaskPlan
     }
 
     /// <summary>
-    /// Gets the current step description, or null if complete.
+    /// 获取当前步骤的描述，如果已完成则返回 null。
     /// </summary>
     public string? GetCurrentStepDescription()
     {
@@ -51,17 +51,17 @@ public class TaskPlan
 }
 
 /// <summary>
-/// Represents the complexity level of a task.
+/// 表示任务的复杂度级别。
 /// </summary>
 public enum ComplexityLevel
 {
     /// <summary>
-    /// Simple task that can be executed directly without planning.
+    /// 简单任务，可以直接执行，无需规划。
     /// </summary>
     Simple,
 
     /// <summary>
-    /// Complex task that requires planning before execution.
+    /// 复杂任务，需要在执行前进行规划。
     /// </summary>
     Complex
 }

@@ -5,8 +5,8 @@ using CodeAgentDemo.Services;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Manages conversation context and compression.
-/// Implements sliding window compression while preserving critical context.
+/// 管理对话上下文和压缩。
+/// 实现滑动窗口压缩，同时保留关键上下文。
 /// </summary>
 public class ContextManager : IContextManager
 {
@@ -14,10 +14,10 @@ public class ContextManager : IContextManager
     private readonly ContextConfig _config;
 
     /// <summary>
-    /// Initializes a new instance of the ContextManager class.
+    /// 初始化 ContextManager 类的新实例。
     /// </summary>
-    /// <param name="tokenCounter">The token counter for estimating token counts.</param>
-    /// <param name="config">The context configuration.</param>
+    /// <param name="tokenCounter">用于估算 token 数量的 Token 计数器。</param>
+    /// <param name="config">上下文配置。</param>
     public ContextManager(ITokenCounter tokenCounter, ContextConfig config)
     {
         ArgumentNullException.ThrowIfNull(tokenCounter);
@@ -60,26 +60,26 @@ public class ContextManager : IContextManager
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Calculate original token count
+            // 计算原始 token 数量
             var originalTokens = GetTokenCount(messageList);
 
-            // Preserve system messages (they are protected)
+            // 保留系统消息（受保护）
             var systemMessages = messageList
                 .Where(m => m.Role == ChatRole.System)
                 .ToList();
 
-            // Get non-system messages for sliding window
+            // 获取非系统消息用于滑动窗口
             var nonSystemMessages = messageList
                 .Where(m => m.Role != ChatRole.System)
                 .ToList();
 
-            // Preserve the most recent turns (MinRecentTurns)
-            // A "turn" is a user-assistant exchange, but we preserve by message count for simplicity
+            // 保留最近的几轮对话（MinRecentTurns）
+            // "一轮" 是指用户-助手的交互，但为简单起见我们按消息数量保留
             var recentMessages = nonSystemMessages
                 .TakeLast(_config.MinRecentTurns)
                 .ToList();
 
-            // Combine preserved messages in original order
+            // 按原始顺序组合保留的消息
             var preservedMessages = new List<ChatMessage>();
             var preservedSet = new HashSet<ChatMessage>(systemMessages);
             preservedSet.UnionWith(recentMessages);
@@ -94,7 +94,7 @@ public class ContextManager : IContextManager
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Calculate preserved token count
+            // 计算保留的 token 数量
             var preservedTokens = GetTokenCount(preservedMessages);
 
             return Task.FromResult(CompressionResult.Succeeded(

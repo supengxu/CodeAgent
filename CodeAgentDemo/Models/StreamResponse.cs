@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace CodeAgentDemo.Models;
 
 /// <summary>
-/// Represents the complete response after streaming ends.
+/// 流结束后的完整响应。
 /// </summary>
 public record StreamResponse(
     IEnumerable<ContentBlock> Content,
@@ -13,7 +13,7 @@ public record StreamResponse(
 );
 
 /// <summary>
-/// Represents a complete tool call.
+/// 表示完整的工具调用。
 /// </summary>
 public record ToolCall(
     string Id,

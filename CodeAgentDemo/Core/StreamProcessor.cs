@@ -5,16 +5,16 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of stream processor that collects and builds response objects from streaming chunks.
+/// 流处理器的实现类，从流式块收集和构建响应对象。
 /// </summary>
 public class StreamProcessor : IStreamProcessor
 {
     private readonly IConsoleUI _ui;
 
     /// <summary>
-    /// Initializes a new instance of the StreamProcessor class.
+    /// 初始化 StreamProcessor 类的新实例。
     /// </summary>
-    /// <param name="ui">The console UI for streaming output.</param>
+    /// <param name="ui">用于流式输出的控制台 UI。</param>
     public StreamProcessor(IConsoleUI ui)
     {
         _ui = ui ?? throw new ArgumentNullException(nameof(ui));
@@ -32,44 +32,53 @@ public class StreamProcessor : IStreamProcessor
 
         _ui.BeginStream();
 
-        await foreach (var chunk in stream.WithCancellation(cancellationToken))
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (!string.IsNullOrEmpty(chunk.TextDelta))
+            await foreach (var chunk in stream.WithCancellation(cancellationToken))
             {
-                _ui.StreamText(chunk.TextDelta);
-                textBuilder.Append(chunk.TextDelta);
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            if (!string.IsNullOrEmpty(chunk.ThinkingDelta))
-            {
-                _ui.StreamThinking(chunk.ThinkingDelta);
-                thinkingBuilder.Append(chunk.ThinkingDelta);
-            }
-
-            if (chunk.ToolCallDelta != null)
-            {
-                if (!toolCallDetected)
+                if (!string.IsNullOrEmpty(chunk.TextDelta))
                 {
-                    _ui.PrintToolCallDetected();
-                    toolCallDetected = true;
+                    _ui.StreamText(chunk.TextDelta);
+                    textBuilder.Append(chunk.TextDelta);
                 }
-                AccumulateToolCall(toolCallBuilders, chunk.ToolCallDelta);
-            }
 
-            if (!string.IsNullOrEmpty(chunk.StopReason))
-            {
-                stopReason = chunk.StopReason;
-            }
+                if (!string.IsNullOrEmpty(chunk.ThinkingDelta))
+                {
+                    _ui.StreamThinking(chunk.ThinkingDelta);
+                    thinkingBuilder.Append(chunk.ThinkingDelta);
+                }
 
-            if (chunk.Usage != null)
-            {
-                usage = chunk.Usage;
+                if (chunk.ToolCallDelta != null)
+                {
+                    if (!toolCallDetected)
+                    {
+                        _ui.PrintToolCallDetected();
+                        toolCallDetected = true;
+                    }
+                    AccumulateToolCall(toolCallBuilders, chunk.ToolCallDelta);
+                }
+
+                if (!string.IsNullOrEmpty(chunk.StopReason))
+                {
+                    stopReason = chunk.StopReason;
+                }
+
+                if (chunk.Usage != null)
+                {
+                    usage = chunk.Usage;
+                }
             }
         }
-
-        _ui.EndStream();
+        catch (OperationCanceledException)
+        {
+            stopReason ??= "cancelled";
+        }
+        finally
+        {
+            _ui.EndStream();
+        }
 
         var contentBlocks = BuildContentBlocks(textBuilder, thinkingBuilder);
         var toolCalls = BuildToolCalls(toolCallBuilders);

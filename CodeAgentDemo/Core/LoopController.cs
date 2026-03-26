@@ -5,7 +5,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of loop controller that manages iteration limits and cycle detection.
+/// 循环控制器的实现类，管理迭代限制和循环检测。
 /// </summary>
 public class LoopController : ILoopController
 {
@@ -17,10 +17,10 @@ public class LoopController : ILoopController
     public LoopState State => _state;
 
     /// <summary>
-    /// Initializes a new instance of the LoopController class.
+    /// 初始化 LoopController 类的新实例。
     /// </summary>
-    /// <param name="config">Loop control configuration.</param>
-    /// <param name="maxTokens">Maximum token limit (optional).</param>
+    /// <param name="config">循环控制配置。</param>
+    /// <param name="maxTokens">最大 token 限制（可选）。</param>
     public LoopController(LoopControlConfig config, int maxTokens = 0)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -31,14 +31,14 @@ public class LoopController : ILoopController
     /// <inheritdoc />
     public Task<bool> CheckIterationAsync(CancellationToken cancellationToken = default)
     {
-        // Check iteration limit
+        // 检查迭代限制
         if (_state.IterationCount >= _config.MaxIterations)
         {
             _state.IterationLimitReached = true;
             return Task.FromResult(false);
         }
 
-        // Check token limit
+        // 检查 token 限制
         double tokenRatio = _state.MaxTokens > 0
             ? (double)_state.TokenUsage / _state.MaxTokens
             : 0;
@@ -49,13 +49,13 @@ public class LoopController : ILoopController
             return Task.FromResult(false);
         }
 
-        // Check for cycle
+        // 检查循环
         if (_state.DetectedCycle)
         {
             return Task.FromResult(false);
         }
 
-        // Increment iteration count
+        // 增加迭代计数
         _state.IterationCount++;
 
         return Task.FromResult(true);
@@ -66,17 +66,17 @@ public class LoopController : ILoopController
     {
         ArgumentNullException.ThrowIfNull(stateHash);
 
-        // Check if this hash already exists in recent states
+        // 检查此哈希是否已存在于最近状态中
         if (_recentStateHashes.Contains(stateHash))
         {
             _state.DetectedCycle = true;
             return true;
         }
 
-        // Add to recent states
+        // 添加到最近状态
         _recentStateHashes.Add(stateHash);
 
-        // Maintain window size
+        // 维护窗口大小
         while (_recentStateHashes.Count > _config.CycleDetectionWindow)
         {
             _recentStateHashes.RemoveAt(0);
@@ -90,7 +90,7 @@ public class LoopController : ILoopController
     {
         ArgumentNullException.ThrowIfNull(stateData);
 
-        // Use SHA256 for consistent hashing
+        // 使用 SHA256 进行一致性哈希
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(stateData));
         return Convert.ToHexString(bytes);
     }

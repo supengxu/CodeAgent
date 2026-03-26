@@ -16,7 +16,7 @@ public class PlanningConfig
     /// Maximum time in seconds allowed for plan generation.
     /// Default: 2 seconds.
     /// </summary>
-    public int TimeoutSeconds { get; set; } = 2;
+    public int TimeoutSeconds { get; set; } = 100;
 
     /// <summary>
     /// Minimum number of expected tool calls to consider a task complex.

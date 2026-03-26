@@ -57,8 +57,8 @@ public class SpectreConsoleIOTests
     {
         var io = new SpectreConsoleIO(useMultiLine: false);
 
-        // This test verifies the method can be called without throwing
-        // Actual input reading requires interactive console
+        // 此测试验证方法可以调用而不抛出异常
+        // 实际输入读取需要交互式控制台
         io.Should().NotBeNull();
     }
 
@@ -67,8 +67,8 @@ public class SpectreConsoleIOTests
     {
         var io = new SpectreConsoleIO(useMultiLine: true);
 
-        // This test verifies the method can be called without throwing
-        // Actual input reading requires interactive console
+        // 此测试验证方法可以调用而不抛出异常
+        // 实际输入读取需要交互式控制台
         io.Should().NotBeNull();
     }
 
@@ -77,7 +77,7 @@ public class SpectreConsoleIOTests
     {
         var io = new SpectreConsoleIO();
 
-        // Verify method exists and is callable (actual confirmation requires interactive console)
+        // 验证方法存在且可调用（实际确认需要交互式控制台）
         io.Should().NotBeNull();
     }
 
@@ -86,7 +86,7 @@ public class SpectreConsoleIOTests
     {
         var io = new SpectreConsoleIO();
 
-        // Verify method exists and is callable (actual selection requires interactive console)
+        // 验证方法存在且可调用（实际选择需要交互式控制台）
         var options = new[] { "Option1", "Option2", "Option3" };
         io.Should().NotBeNull();
     }

@@ -5,7 +5,7 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Manages todo items with state tracking and validation.
+/// 管理待办事项及其状态跟踪和验证。
 /// </summary>
 public class TodoManager
 {
@@ -13,11 +13,29 @@ public class TodoManager
     private int _roundsSinceLastUpdate;
 
     /// <summary>
-    /// Updates the todo list with new items.
+    /// Gets all todo items.
     /// </summary>
-    /// <param name="items">List of todo items to update.</param>
-    /// <returns>Rendered todo list string.</returns>
-    /// <exception cref="ArgumentException">Thrown when multiple items have in_progress status.</exception>
+    public IReadOnlyList<TodoItem> Items => _items.AsReadOnly();
+
+    /// <summary>
+    /// Gets the number of rounds since the last todo update.
+    /// </summary>
+    public int RoundsSinceLastUpdate => _roundsSinceLastUpdate;
+
+    /// <summary>
+    /// Increments the round counter when todo is not updated.
+    /// </summary>
+    public void IncrementRound()
+    {
+        _roundsSinceLastUpdate++;
+    }
+
+    /// <summary>
+    /// 使用新项更新待办列表。
+    /// </summary>
+    /// <param name="items">要更新的待办项列表。</param>
+    /// <returns>渲染的待办列表字符串。</returns>
+    /// <exception cref="ArgumentException">当多个项具有 in_progress 状态时抛出。</exception>
     public string Update(IEnumerable<TodoItem> items)
     {
         var itemList = items.ToList();
@@ -55,25 +73,7 @@ public class TodoManager
     }
 
     /// <summary>
-    /// Gets all todo items.
-    /// </summary>
-    public IReadOnlyList<TodoItem> Items => _items.AsReadOnly();
-
-    /// <summary>
-    /// Gets the number of rounds since the last todo update.
-    /// </summary>
-    public int RoundsSinceLastUpdate => _roundsSinceLastUpdate;
-
-    /// <summary>
-    /// Increments the round counter when todo is not updated.
-    /// </summary>
-    public void IncrementRound()
-    {
-        _roundsSinceLastUpdate++;
-    }
-
-    /// <summary>
-    /// Resets the round counter.
+    /// 重置轮次计数器。
     /// </summary>
     public void ResetRound()
     {
@@ -81,18 +81,18 @@ public class TodoManager
     }
 
     /// <summary>
-    /// Checks if nag reminder should be injected.
+    /// 检查是否应该注入提醒。
     /// </summary>
-    /// <param name="roundsSinceLastUpdate">Number of rounds since todo was last updated.</param>
-    /// <param name="threshold">Number of rounds threshold (default 3).</param>
-    /// <returns>True if reminder should be injected.</returns>
+    /// <param name="roundsSinceLastUpdate">自上次更新以来的轮次数。</param>
+    /// <param name="threshold">轮次阈值（默认 3）。</param>
+    /// <returns>如果应该注入提醒返回 true。</returns>
     public bool ShouldNag(int roundsSinceLastUpdate, int threshold = 3)
     {
         return roundsSinceLastUpdate >= threshold && _items.Count > 0;
     }
 
     /// <summary>
-    /// Renders the todo list as a formatted string.
+    /// 将待办列表渲染为格式化的字符串。
     /// </summary>
     public string Render()
     {
@@ -128,13 +128,13 @@ public class TodoManager
     }
 
     /// <summary>
-    /// Gets the current in-progress item if any.
+    /// 获取当前的进行中项（如果有）。
     /// </summary>
     public TodoItem? CurrentInProgressItem =>
         _items.FirstOrDefault(i => i.Status == TodoStatus.InProgress);
 
     /// <summary>
-    /// Gets JSON representation of todos for tool output.
+    /// 获取待办项的 JSON 表示形式用于工具输出。
     /// </summary>
     public string ToJson()
     {

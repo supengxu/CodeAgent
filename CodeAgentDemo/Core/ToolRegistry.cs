@@ -3,16 +3,16 @@ using CodeAgentDemo.Tools;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Registry for managing available tools.
+/// 用于管理可用工具的注册表。
 /// </summary>
 public class ToolRegistry : IToolRegistry
 {
     private readonly Dictionary<string, ITool> _tools = new();
 
     /// <summary>
-    /// Registers a tool.
+    /// 注册工具。
     /// </summary>
-    /// <exception cref="ArgumentException">Thrown when a tool with the same name already exists.</exception>
+    /// <exception cref="ArgumentException">当已存在同名工具时抛出。</exception>
     public void Register(ITool tool)
     {
         ArgumentNullException.ThrowIfNull(tool);
@@ -26,16 +26,16 @@ public class ToolRegistry : IToolRegistry
     }
 
     /// <summary>
-    /// Gets a tool by name.
+    /// 按名称获取工具。
     /// </summary>
-    /// <returns>The tool if found, null otherwise.</returns>
+    /// <returns>如果找到返回工具，否则返回 null。</returns>
     public ITool? GetTool(string name)
     {
         return _tools.TryGetValue(name, out var tool) ? tool : null;
     }
 
     /// <summary>
-    /// Gets all registered tools.
+    /// 获取所有已注册的工具。
     /// </summary>
     public IEnumerable<ITool> GetAllTools()
     {
@@ -43,12 +43,12 @@ public class ToolRegistry : IToolRegistry
     }
 
     /// <summary>
-    /// Gets the number of registered tools.
+    /// 获取已注册工具的数量。
     /// </summary>
     public int Count => _tools.Count;
 
     /// <summary>
-    /// Checks if a tool with the given name is registered.
+    /// 检查是否已注册具有给定名称的工具。
     /// </summary>
     public bool HasTool(string name)
     {

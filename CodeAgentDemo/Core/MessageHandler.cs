@@ -4,16 +4,16 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Implementation of message handler that manages message creation and session persistence.
+/// 消息处理器的实现类，管理消息创建和会话持久化。
 /// </summary>
 public class MessageHandler : IMessageHandler
 {
     private readonly ISessionCli _sessionCli;
 
     /// <summary>
-    /// Initializes a new instance of the MessageHandler class.
+    /// 初始化 MessageHandler 类的新实例。
     /// </summary>
-    /// <param name="sessionCli">The session CLI for managing sessions.</param>
+    /// <param name="sessionCli">用于管理会话的会话 CLI。</param>
     public MessageHandler(ISessionCli sessionCli)
     {
         _sessionCli = sessionCli ?? throw new ArgumentNullException(nameof(sessionCli));

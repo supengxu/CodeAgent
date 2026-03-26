@@ -3,44 +3,44 @@ using CodeAgentDemo.Models;
 namespace CodeAgentDemo.Core;
 
 /// <summary>
-/// Interface for controlling agent loop iterations and detecting cycles.
+/// 控制 Agent 循环迭代和循环检测的接口。
 /// </summary>
 public interface ILoopController
 {
     /// <summary>
-    /// Gets the current loop state.
+    /// 获取当前循环状态。
     /// </summary>
     LoopState State { get; }
 
     /// <summary>
-    /// Checks if another iteration is allowed and updates the state.
+    /// 检查是否允许继续迭代并更新状态。
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if iteration is allowed, false if limits are reached.</returns>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>如果允许迭代返回 true，否则返回 false 表示已达限制。</returns>
     Task<bool> CheckIterationAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Detects if the current state forms a cycle with recent states.
+    /// 检测当前状态是否与最近状态形成循环。
     /// </summary>
-    /// <param name="stateHash">Hash of the current state.</param>
-    /// <returns>True if a cycle is detected.</returns>
+    /// <param name="stateHash">当前状态的哈希值。</param>
+    /// <returns>如果检测到循环返回 true。</returns>
     bool DetectCycle(string stateHash);
 
     /// <summary>
-    /// Generates a hash for the current state for cycle detection.
+    /// 生成当前状态的哈希值用于循环检测。
     /// </summary>
-    /// <param name="stateData">State data to hash.</param>
-    /// <returns>A hash string representing the state.</returns>
+    /// <param name="stateData">要哈希的状态数据。</param>
+    /// <returns>表示状态的哈希字符串。</returns>
     string GetStateHash(string stateData);
 
     /// <summary>
-    /// Updates token usage in the current state.
+    /// 更新当前状态的 token 使用量。
     /// </summary>
-    /// <param name="tokenUsage">Current token usage.</param>
+    /// <param name="tokenUsage">当前 token 使用量。</param>
     void UpdateTokenUsage(int tokenUsage);
 
     /// <summary>
-    /// Resets the loop controller state for a new session.
+    /// 重置循环控制器状态以开始新会话。
     /// </summary>
     void Reset();
 }
