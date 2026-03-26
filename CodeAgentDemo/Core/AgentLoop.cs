@@ -121,6 +121,8 @@ public class AgentLoop : IAgentLoop
 
             var response = await CollectStreamingResponseAsync(cancellationToken);
 
+            // 累加当前轮的 token 用量
+            // 注意：response.Usage 应为单次请求的用量，而非会话累积值
             if (response.Usage != null)
             {
                 totalInputTokens += response.Usage.InputTokens;
@@ -146,20 +148,25 @@ public class AgentLoop : IAgentLoop
                     }
                 }
 
+                bool hasTodoTool = response.ToolCalls.Any(t => t.Name == "todo");
+
                 foreach (var toolCall in response.ToolCalls)
                 {
-                    var result = await _toolExecutor.ExecuteAsync(toolCall, cancellationToken);
-                    await _messageHandler.CreateToolResultMessageAsync(toolCall.Id, result.Output, !result.Success);
-
-                    if (toolCall.Name == "todo")
+                    try
                     {
-                        _roundsSinceLastTodo = 0;
+                        var result = await _toolExecutor.ExecuteAsync(toolCall, cancellationToken);
+                        await _messageHandler.CreateToolResultMessageAsync(toolCall.Id, result.Output, !result.Success);
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        _roundsSinceLastTodo++;
+                        await _messageHandler.CreateToolResultMessageAsync(
+                            toolCall.Id,
+                            $"工具执行失败: {ex.Message}",
+                            isError: true);
                     }
                 }
+
+                _roundsSinceLastTodo = hasTodoTool ? 0 : _roundsSinceLastTodo + 1;
 
                 if (_todoManager != null && _todoManager.ShouldNag(_roundsSinceLastTodo, 3))
                 {
@@ -167,11 +174,6 @@ public class AgentLoop : IAgentLoop
                     await _messageHandler.CreateSystemMessageAsync(reminderText);
                 }
 
-                if (plan != null)
-                {
-                    plan.AdvanceStep();
-                    await UpdatePlanProgressAsync(plan);
-                }
                 continue;
             }
 
