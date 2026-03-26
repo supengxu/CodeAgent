@@ -35,29 +35,58 @@ public class AgentLoopTests
         IConsoleIO? console = null,
         ISessionCli? sessionCli = null,
         IConsoleUI? ui = null,
-        string? sessionsDir = null)
+        string? sessionsDir = null,
+        IMessageHandler? messageHandler = null,
+        IToolExecutor? toolExecutor = null,
+        IStreamProcessor? streamProcessor = null)
     {
         var actualSessionsDir = sessionsDir ?? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         var actualSessionCli = sessionCli ?? CreateSessionCli(actualSessionsDir);
         var actualUi = ui ?? CreateConsoleUI();
+        var actualTools = tools ?? CreateToolRegistry();
+        var actualConsole = console ?? new Mock<IConsoleIO>().Object;
+        var actualMessageHandler = messageHandler ?? CreateMessageHandler(actualSessionCli);
+        var actualToolExecutor = toolExecutor ?? CreateToolExecutor(actualTools, actualUi, actualConsole);
+        var actualStreamProcessor = streamProcessor ?? CreateStreamProcessor(actualUi);
+
+        var actualProvider = provider ?? new Mock<IChatProvider>().Object;
 
         return new AgentLoop(
-            provider ?? new Mock<IChatProvider>().Object,
-            tools ?? CreateToolRegistry(),
+            actualProvider,
+            actualTools,
             options ?? new ChatOptions(),
-            console ?? new Mock<IConsoleIO>().Object,
+            actualConsole,
             actualSessionCli,
             actualUi,
-            CreateMessageHandler(actualSessionCli),
-            CreateToolExecutor(tools ?? CreateToolRegistry(), actualUi, console ?? new Mock<IConsoleIO>().Object),
-            CreateStreamProcessor(actualUi)
+            actualMessageHandler,
+            actualToolExecutor,
+            actualStreamProcessor
         );
     }
 
     [Fact]
     public void Constructor_WithNullProvider_ShouldThrowArgumentNullException()
     {
-        var act = () => CreateAgentLoop(provider: null!);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var sessionCli = CreateSessionCli(sessionsDir);
+        var ui = CreateConsoleUI();
+        var tools = CreateToolRegistry();
+        var console = new Mock<IConsoleIO>().Object;
+        var messageHandler = CreateMessageHandler(sessionCli);
+        var toolExecutor = CreateToolExecutor(tools, ui, console);
+        var streamProcessor = CreateStreamProcessor(ui);
+
+        var act = () => new AgentLoop(
+            null!,
+            tools,
+            new ChatOptions(),
+            console,
+            sessionCli,
+            ui,
+            messageHandler,
+            toolExecutor,
+            streamProcessor
+        );
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("provider");
@@ -66,7 +95,25 @@ public class AgentLoopTests
     [Fact]
     public void Constructor_WithNullTools_ShouldThrowArgumentNullException()
     {
-        var act = () => CreateAgentLoop(tools: null!);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var sessionCli = CreateSessionCli(sessionsDir);
+        var ui = CreateConsoleUI();
+        var console = new Mock<IConsoleIO>().Object;
+        var messageHandler = CreateMessageHandler(sessionCli);
+        var toolExecutor = CreateToolExecutor(CreateToolRegistry(), ui, console);
+        var streamProcessor = CreateStreamProcessor(ui);
+
+        var act = () => new AgentLoop(
+            new Mock<IChatProvider>().Object,
+            null!,
+            new ChatOptions(),
+            console,
+            sessionCli,
+            ui,
+            messageHandler,
+            toolExecutor,
+            streamProcessor
+        );
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("tools");
@@ -75,7 +122,25 @@ public class AgentLoopTests
     [Fact]
     public void Constructor_WithNullConsole_ShouldThrowArgumentNullException()
     {
-        var act = () => CreateAgentLoop(console: null!);
+        var sessionsDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var sessionCli = CreateSessionCli(sessionsDir);
+        var ui = CreateConsoleUI();
+        var tools = CreateToolRegistry();
+        var messageHandler = CreateMessageHandler(sessionCli);
+        var toolExecutor = CreateToolExecutor(tools, ui, new Mock<IConsoleIO>().Object);
+        var streamProcessor = CreateStreamProcessor(ui);
+
+        var act = () => new AgentLoop(
+            new Mock<IChatProvider>().Object,
+            tools,
+            new ChatOptions(),
+            null!,
+            sessionCli,
+            ui,
+            messageHandler,
+            toolExecutor,
+            streamProcessor
+        );
 
         act.Should().Throw<ArgumentNullException>()
             .WithParameterName("console");

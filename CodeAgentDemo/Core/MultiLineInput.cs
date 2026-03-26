@@ -41,7 +41,7 @@ public class MultiLineInput : IInputHandler
         return input;
     }
 
-    public async Task<InputResult> ReadInputAsync(CancellationToken ct)
+    public Task<InputResult> ReadInputAsync(CancellationToken ct)
     {
         _isCancelled = false;
         _isFirstRender = true;
@@ -59,11 +59,11 @@ public class MultiLineInput : IInputHandler
             if (result != null)
             {
                 ClearInputArea();
-                return result;
+                return Task.FromResult(result);
             }
         }
 
-        return InputResult.Cancelled();
+        return Task.FromResult(InputResult.Cancelled());
     }
 
     public void CancelInput()

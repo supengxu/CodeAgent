@@ -139,17 +139,17 @@ public class ToolExecutor : IToolExecutor
         }
     }
 
-    private async Task<bool> ConfirmExecutionAsync(ITool tool, System.Text.Json.JsonElement arguments)
+    private Task<bool> ConfirmExecutionAsync(ITool tool, System.Text.Json.JsonElement arguments)
     {
         if (!tool.RequiresConfirmation(arguments))
         {
-            return true;
+            return Task.FromResult(true);
         }
 
         _ui.PrintToolConfirmation(tool.Name);
         _console.Write("    执行? [y/N]: ");
 
         var confirmation = _console.ReadLine();
-        return confirmation?.ToLower() == "y";
+        return Task.FromResult(confirmation?.ToLower() == "y");
     }
 }

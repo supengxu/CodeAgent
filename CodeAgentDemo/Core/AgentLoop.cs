@@ -32,6 +32,8 @@ public class AgentLoop : IAgentLoop
     private readonly ILoopManager? _loopManager;
     private readonly IPlanningEngine? _planningEngine;
     private readonly IContextManager? _contextManager;
+    private readonly TodoManager? _todoManager;
+    private int _roundsSinceLastTodo;
 
     public IReadOnlyList<ChatMessage> History => _sessionCli.CurrentSession.Messages;
 
@@ -48,7 +50,8 @@ public class AgentLoop : IAgentLoop
         ILoopManager? loopManager = null,
         IPlanningEngine? planningEngine = null,
         IContextManager? contextManager = null,
-        ILayoutRenderer? layoutRenderer = null)
+        ILayoutRenderer? layoutRenderer = null,
+        TodoManager? todoManager = null)
     {
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
         _tools = tools ?? throw new ArgumentNullException(nameof(tools));
@@ -63,6 +66,7 @@ public class AgentLoop : IAgentLoop
         _planningEngine = planningEngine;
         _contextManager = contextManager;
         _layoutRenderer = layoutRenderer;
+        _todoManager = todoManager;
 
         InitializeSession();
     }
@@ -146,6 +150,21 @@ public class AgentLoop : IAgentLoop
                 {
                     var result = await _toolExecutor.ExecuteAsync(toolCall, cancellationToken);
                     await _messageHandler.CreateToolResultMessageAsync(toolCall.Id, result.Output, !result.Success);
+
+                    if (toolCall.Name == "todo")
+                    {
+                        _roundsSinceLastTodo = 0;
+                    }
+                    else
+                    {
+                        _roundsSinceLastTodo++;
+                    }
+                }
+
+                if (_todoManager != null && _todoManager.ShouldNag(_roundsSinceLastTodo, 3))
+                {
+                    var reminderText = "<reminder>请更新你的待办事项列表。使用 todo 工具查看或更新进度。</reminder>";
+                    await _messageHandler.CreateSystemMessageAsync(reminderText);
                 }
 
                 if (plan != null)

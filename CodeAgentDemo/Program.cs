@@ -91,6 +91,8 @@ try
     services.AddSingleton<IStreamProcessor, StreamProcessor>();
     services.AddSingleton<ILoopController, LoopController>();
     services.AddSingleton<ILoopManager, LoopManager>();
+    services.AddSingleton<TodoManager>();
+    services.AddSingleton<TodoTool>();
 
     services.AddHttpClient("WebSearch");
     services.AddHttpClient("CodeSearch");
@@ -111,10 +113,13 @@ try
 
     var tools = serviceProvider.GetRequiredService<IToolRegistry>();
     var toolFactory = serviceProvider.GetRequiredService<IToolFactory>();
+    var todoTool = serviceProvider.GetRequiredService<TodoTool>();
+
     foreach (var tool in toolFactory.CreateTools())
     {
         tools.Register(tool);
     }
+    tools.Register(todoTool);
 
     var agent = serviceProvider.GetRequiredService<IAgentLoop>();
     await agent.RunAsync();
