@@ -149,6 +149,9 @@ public class ToolExecutor : IToolExecutor
         _ui.PrintToolConfirmation(tool.Name);
         _console.Write("    执行? [y/N]: ");
 
+        // Ensure output is flushed before waiting for user input
+        Console.Out.Flush();
+
         var confirmation = _console.ReadLine();
         return Task.FromResult(confirmation?.ToLower() == "y");
     }

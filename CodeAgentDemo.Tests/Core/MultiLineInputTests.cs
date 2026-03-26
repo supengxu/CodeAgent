@@ -62,27 +62,14 @@ public class MultiLineInputTests
     }
 
     [Fact]
-    public void HandleKey_ShiftEnter_ShouldInsertNewline()
+    public void HandleKey_CtrlEnter_ShouldInsertNewline()
     {
         var input = new MultiLineInput();
-        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, true, false, false);
+        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, true);
 
         input.HandleKey(key);
 
         input.CurrentText.Should().Be("\n");
-    }
-
-    [Fact]
-    public void HandleKey_CtrlEnter_ShouldReturnSubmittedResult()
-    {
-        var input = MultiLineInput.WithInitialText("Hello World");
-        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, true);
-
-        var result = input.HandleKey(key);
-
-        result.Should().NotBeNull();
-        result!.State.Should().Be(InputState.Submitted);
-        result.Text.Should().Be("Hello World");
     }
 
     [Fact]
@@ -307,10 +294,10 @@ public class MultiLineInputTests
     }
 
     [Fact]
-    public void HandleKey_CtrlEnterWithEmptyLines_ShouldSubmit()
+    public void HandleKey_EnterWithEmptyLines_ShouldSubmit()
     {
         var input = MultiLineInput.WithInitialText("\n\n\n");
-        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, true);
+        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false);
 
         var result = input.HandleKey(key);
 

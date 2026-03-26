@@ -215,35 +215,16 @@ public class BashTool : ITool
     {
         var firstWord = command.TrimStart().Split(' ')[0];
 
+        // Strictly read-only commands that don't modify system state
         var safeCommands = new HashSet<string>
         {
             "ls", "cat", "head", "tail", "grep", "find", "wc", "sort", "uniq",
-            "touch", "mkdir", "cp", "mv", "rm", "rmdir",
             "echo", "printf",
-            "sed", "awk",
-            "chmod", "chown",
-            "git", "dotnet", "npm", "yarn", "pip",
-            "code", "vim", "nano"
+            "file", "stat", "which", "whereis"
         };
 
         if (!safeCommands.Contains(firstWord))
             return false;
-
-        if (firstWord == "rm")
-        {
-            if (command.Contains(" -rf /") || command.Contains(" -rf /*"))
-                return false;
-
-            var tokens = TokenizeCommand(command);
-            foreach (var token in tokens)
-            {
-                if (token.StartsWith("-")) continue;
-                if (token == "rm") continue;
-
-                if (token == "*" || token == ".")
-                    return false;
-            }
-        }
 
         return true;
     }

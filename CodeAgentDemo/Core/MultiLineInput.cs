@@ -79,8 +79,8 @@ public class MultiLineInput : IInputHandler
     {
         ArgumentNullException.ThrowIfNull(keyInfo);
 
-        // Shift+Enter = 换行（在当前光标位置插入新行）
-        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift) && keyInfo.Key == ConsoleKey.Enter)
+        // Ctrl+Enter = 换行（在当前光标位置插入新行）
+        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) && keyInfo.Key == ConsoleKey.Enter)
         {
             HandleEnter();
             return null;

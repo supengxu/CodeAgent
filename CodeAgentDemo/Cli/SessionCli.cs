@@ -61,6 +61,12 @@ public class SessionCli : ISessionCli
         {
             await CreateNewSessionAsync(null);
         }
+
+        // Ensure session file path is properly initialized
+        if (string.IsNullOrEmpty(_currentSessionFilePath))
+        {
+            throw new InvalidOperationException("Failed to initialize session: session file path is empty");
+        }
     }
 
     public async Task SaveCurrentSessionAsync()
