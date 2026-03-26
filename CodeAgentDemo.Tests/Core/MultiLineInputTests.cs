@@ -49,10 +49,23 @@ public class MultiLineInputTests
     }
 
     [Fact]
-    public void HandleKey_Enter_ShouldInsertNewline()
+    public void HandleKey_Enter_ShouldReturnSubmittedResult()
+    {
+        var input = MultiLineInput.WithInitialText("Hello World");
+        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false);
+
+        var result = input.HandleKey(key);
+
+        result.Should().NotBeNull();
+        result!.State.Should().Be(InputState.Submitted);
+        result.Text.Should().Be("Hello World");
+    }
+
+    [Fact]
+    public void HandleKey_ShiftEnter_ShouldInsertNewline()
     {
         var input = new MultiLineInput();
-        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false);
+        var key = new ConsoleKeyInfo('\r', ConsoleKey.Enter, true, false, false);
 
         input.HandleKey(key);
 
@@ -277,18 +290,18 @@ public class MultiLineInputTests
     }
 
     [Fact]
-    public void HandleKey_EnterOnMultipleLines_ShouldMaintainLineCount()
+    public void HandleKey_ShiftEnterOnMultipleLines_ShouldMaintainLineCount()
     {
         var input = MultiLineInput.WithInitialText("Line1");
-        var enterKey = new ConsoleKeyInfo('\r', ConsoleKey.Enter, false, false, false);
+        var shiftEnterKey = new ConsoleKeyInfo('\r', ConsoleKey.Enter, true, false, false);
 
-        input.HandleKey(enterKey); // First newline
+        input.HandleKey(shiftEnterKey); // First newline
         input.HandleKey(new ConsoleKeyInfo('L', ConsoleKey.L, false, false, false));
         input.HandleKey(new ConsoleKeyInfo('i', ConsoleKey.I, false, false, false));
         input.HandleKey(new ConsoleKeyInfo('n', ConsoleKey.N, false, false, false));
         input.HandleKey(new ConsoleKeyInfo('e', ConsoleKey.E, false, false, false));
         input.HandleKey(new ConsoleKeyInfo('2', ConsoleKey.D2, false, false, false));
-        input.HandleKey(enterKey); // Second newline
+        input.HandleKey(shiftEnterKey); // Second newline
 
         input.CurrentText.Should().Be("Line1\nLine2\n");
     }

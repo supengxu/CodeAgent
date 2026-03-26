@@ -79,21 +79,21 @@ public class MultiLineInput : IInputHandler
     {
         ArgumentNullException.ThrowIfNull(keyInfo);
 
-        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyInfo.Key == ConsoleKey.Enter)
+        // Shift+Enter = 换行（在当前光标位置插入新行）
+        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift) && keyInfo.Key == ConsoleKey.Enter)
         {
-            return InputResult.Submitted(CurrentText);
+            HandleEnter();
+            return null;
         }
 
-        if (keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) && keyInfo.Key == ConsoleKey.Enter)
+        // 仅 Enter = 发送消息
+        if (keyInfo.Key == ConsoleKey.Enter)
         {
             return InputResult.Submitted(CurrentText);
         }
 
         switch (keyInfo.Key)
         {
-            case ConsoleKey.Enter:
-                HandleEnter();
-                break;
 
             case ConsoleKey.UpArrow:
                 HandleUpArrow();
